@@ -7,11 +7,10 @@
 
 <p align="center">
     <!-- https://dev.to/envoy_/150-badges-for-github-pnk#contents -->
-    
-    ![SharePoint](https://img.shields.io/badge/Microsoft_SharePoint-0078D4?style=for-the-badge&logo=microsoft-sharepoint&logoColor=white)
-    ![Issues](https://img.shields.io/github/issues/dreller/DSP-Reporting.svg)
-    ![License](https://img.shields.io/github/license/dreller/DSP-Reporting.svg)
 
+    <img src="https://img.shields.io/badge/Microsoft_SharePoint-0078D4?style=for-the-badge&logo=microsoft-sharepoint&logoColor=white">&nbsp;
+    <img src="https://img.shields.io/github/issues/dreller/DSP-Reporting.svg">&nbsp;
+    <img src="https://img.shields.io/github/license/dreller/DSP-Reporting.svg">
 
 </p>
 
