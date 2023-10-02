@@ -6,7 +6,12 @@
 <h4 align="center">A light and simple utility for reporting using SharePoint Lists.</h4>
 
 <p align="center">
-  <!-- Will insert Badges here in the future -->
+    <!-- https://dev.to/envoy_/150-badges-for-github-pnk#contents -->
+    ![SharePoint](https://img.shields.io/badge/Microsoft_SharePoint-0078D4?style=for-the-badge&logo=microsoft-sharepoint&logoColor=white)
+    ![Issues](https://img.shields.io/github/issues/dreller/DSP-Reporting.svg)
+    ![License](https://img.shields.io/github/license/dreller/DSP-Reporting.svg)
+
+
 </p>
 
 <p align="center">
@@ -69,7 +74,7 @@ Download the latest release from the [Releases](https://github.com/Dreller/DSP-R
 
 ## License
 
-![License](https://img.shields.io/github/license/dreller/DSP-Reporting.svg)
+...
 
 
 ---
