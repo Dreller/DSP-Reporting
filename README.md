@@ -3,13 +3,13 @@ DSP Reporting
 </h1>
 <h4 align="center">A light and simple utility for reporting using SharePoint Lists.</h4>
 
-<p align="center">
+<div style="text-align:center;width:100%;">
 
     <img src="https://img.shields.io/badge/Microsoft_SharePoint-0078D4?style=for-the-badge&logo=microsoft-sharepoint&logoColor=white">&nbsp;
     <img src="https://img.shields.io/github/issues/dreller/DSP-Reporting.svg">&nbsp;
     <img src="https://img.shields.io/github/license/dreller/DSP-Reporting.svg">
 
-</p>
+</div>
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
