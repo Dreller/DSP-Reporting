@@ -5,10 +5,12 @@ DSP Reporting
 
 <div style="text-align:center;width:100%;">
 
-    <img src="https://img.shields.io/badge/Microsoft_SharePoint-0078D4?style=for-the-badge&logo=microsoft-sharepoint&logoColor=white">&nbsp;
-    <img src="https://img.shields.io/github/issues/dreller/DSP-Reporting.svg">&nbsp;
-    <img src="https://img.shields.io/github/license/dreller/DSP-Reporting.svg">
+    <img src="https://img.shields.io/badge/Microsoft_SharePoint-0078D4?style=for-the-badge&logo=microsoft-sharepoint&logoColor=white">
 
+    <img src="https://img.shields.io/github/issues/dreller/DSP-Reporting.svg">
+    
+    <img src="https://img.shields.io/github/license/dreller/DSP-Reporting.svg">
+    
 </div>
 
 <p align="center">
