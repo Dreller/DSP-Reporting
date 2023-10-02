@@ -69,6 +69,7 @@ Download the latest release from the [Releases](https://github.com/Dreller/DSP-R
 
 ## License
 
-...
+![License](https://img.shields.io/github/license/dreller/DSP-Reporting.svg)
+
 
 ---
