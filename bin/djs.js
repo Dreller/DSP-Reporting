@@ -289,7 +289,21 @@ function d_LoadColumn(args){
  * Load Lists for the current Site.
  */
 function d_LoadLists(){
-    d_CallSP("lists?$select=Id,Title,Hidden,BaseType,ItemCount,Fields&$expand=Fields", {}, function(response){
+    // Configuration File control if we can use Lists and/or Libraries - Use of $filter
+    if( _ALLOW_CUST_LIBRARY && _ALLOW_SYST_LIBRARY && _ALLOW_CUST_LISTS ){
+        var listFilter = "";
+    }else{
+        var aBaseTypes = [];
+        if( _ALLOW_CUST_LIBRARY || _ALLOW_SYST_LIBRARY ){
+            aBaseTypes.push( "BaseType eq 1" );
+        }
+        if( _ALLOW_CUST_LISTS ){
+            aBaseTypes.push( "BaseType eq 0" );
+        }
+        var listFilter = "$filter=" + aBaseTypes.join(" and ") + "&";
+    }
+    
+    d_CallSP("lists?" + listFilter + "$select=Id,Title,Hidden,BaseType,ItemCount,Fields&$expand=Fields", {}, function(response){
         dreller.site["lists"] = [];
         response.d.results.forEach( function( thisEntry, thisIndex) {
             // Establish conditions if we should keep the list or not.
