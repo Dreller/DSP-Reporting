@@ -16,3 +16,6 @@ var _ALLOW_SYST_LIBRARY = false;
 
 // Allow reporting on Lists
 var _ALLOW_CUST_LISTS = true;
+
+// Allow using System Fields
+var _ALLOW_SYST_FIELD = false;

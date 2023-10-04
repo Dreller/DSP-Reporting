@@ -300,10 +300,10 @@ function d_LoadLists(){
         if( _ALLOW_CUST_LISTS ){
             aBaseTypes.push( "BaseType eq 0" );
         }
-        var listFilter = "$filter=" + aBaseTypes.join(" and ") + "&";
+        var listFilter = "&$filter=" + aBaseTypes.join(" and ");
     }
-    
-    d_CallSP("lists?" + listFilter + "$select=Id,Title,Hidden,BaseType,ItemCount,Fields&$expand=Fields", {}, function(response){
+
+    d_CallSP("lists?$select=Id,Title,Hidden,BaseType,ItemCount,Fields&$expand=Fields" + listFilter, {}, function(response){
         dreller.site["lists"] = [];
         response.d.results.forEach( function( thisEntry, thisIndex) {
             // Establish conditions if we should keep the list or not.
@@ -368,9 +368,16 @@ function d_BuildEditor(){
     var xList = (dreller.site.lists).filter( x => x.Id == $("#lstDatasource").val() )[0];
     var xReport = (dreller.site.reports).filter( y => y.Id == $("#lstReport").val())[0];
 
+    // Filter the list of Columns if we are allowed to use System Fields or not
+    if( _ALLOW_SYST_FIELD ){
+        var xColumns = xList.Fields.results;
+    }else{
+        var xColumns = (xList.Fields.results).filter( x => x.Title == "ID" || ( x.Hidden == false && x.ReadOnlyField == false && x.Title != "Attachments" && x.Title != "Content Type" )  );
+    }
+
     dreller["editor"] = {
         list: xList,
-        columns: xList.Fields.results,
+        columns: xColumns,
         report: xReport,
         reportName: (dreller.runtime.action=="create" ? $("#txtNewReportName").val():xReport.Title)
     }
