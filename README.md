@@ -26,7 +26,6 @@ DSP Reporting
 1. Extract the content on your computer.
 1. Copy the file `bin/dconf.template.js`, rename to `bin/dconf.js`.  See the [Configuration file](configuration-file) to know how to set it up.
 1. In your SharePoint Site, upload all files in a new Document Library or in a new Folder in an existing Library.
-1. 
 
 ### Configuration file
 
