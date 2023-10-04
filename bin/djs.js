@@ -178,7 +178,18 @@ function d_BuildQueryUrl(){
         });
 
     // Build the Query
-        var queryString = `$format=json&$filter=(${ aWhere.join(" and ") })&$orderby=${ aSort.join(",") }&$select=${ aShow.join(",") }`;
+        var aParameters = [];
+        aParameters.push( "$format=json" );
+            if( aWhere.length > 0 ){
+                aParameters.push( `$filter=(${ aWhere.join(" and ") })` );
+            }
+            if( aSort.length > 0 ){
+                aParameters.push( `$orderby=${ aSort.join(",") }` );
+            }
+            if( aShow.length > 0 ){
+                aParameters.push( `$select=${ aShow.join(",") }` );
+            }
+        var queryString = aParameters.join("&");
         dreller.report["odata"] = {
             string: queryString,
             where: aWhere,
@@ -417,6 +428,7 @@ function d_BuildEditor(){
                 <span id="optionDelete" class="icon" data-tooltip="Remove this row" onclick="d_BuilderRemRow(this.parentElement.parentElement);">&#59153;</span>
             </td></tr>`);
 
+    if( dreller.runtime.mode == "build" && dreller.runtime.action == "edit" ){
     // Parse the Report Definition
         dreller.editor.report["defn"]  = JSON.parse( dreller.editor.report.Definition );
 
@@ -447,6 +459,7 @@ function d_BuildEditor(){
 
     // Set the Report Options
 
+    }
 
 
     // Show the Editor
