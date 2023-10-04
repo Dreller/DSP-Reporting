@@ -375,6 +375,19 @@ function d_BuildEditor(){
         var xColumns = (xList.Fields.results).filter( x => x.Title == "ID" || ( x.Hidden == false && x.ReadOnlyField == false && x.Title != "Attachments" && x.Title != "Content Type" )  );
     }
 
+    // Sort Columns
+    xColumns.sort((a, b) => {
+        const titleA = a.Title.toLowerCase();
+        const titleB = b.Title.toLowerCase();
+        if( titleA < titleB ){
+            return -1;
+        }
+        if( titleA > titleB ){
+            return 1;
+        }
+        return 0;
+    } );
+
     dreller["editor"] = {
         list: xList,
         columns: xColumns,
