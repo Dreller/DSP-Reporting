@@ -38,7 +38,7 @@ function HelloDreller(runtype){
             action: ""
         }
     }
-
+/*
 // Running a Report
 if( runtype == "run" ){
     d_StackAdd( d_ParseURL );
@@ -58,12 +58,12 @@ if( runtype == "build" ){
     d_StackAdd( d_LoadLists );
     d_StackAdd( d_InsertLists );
 
-    d_StackAdd( d_Waiting, false );
+    
 
 }
+*/
 
-
-
+d_StackAdd( d_Waiting, false );
 // Execute the queue sequentially.
     d_StackRun();
 }

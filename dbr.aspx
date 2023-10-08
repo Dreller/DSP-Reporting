@@ -13,6 +13,9 @@
     <script src="bin/dconf.js"></script>
     <script src="bin/d.js"></script>
     <script src="bin/djs.js"></script>
+
+    <script src="spReportify.js"></script>
+
     <link rel="stylesheet" href="bin/pico.css">
     <style>
         .icon{
@@ -53,7 +56,7 @@
     <!-- Selector: Datasource (list) -->
         <div id="SelectDatasource">
             <label for="lstDatasource">Datasource:</label>
-            <select id="lstDatasource" onchange="d_GetReports();">
+            <select id="lstDatasource">
                 <option value="">Choose an option...</option>
             </select>
         </div>
