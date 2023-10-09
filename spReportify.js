@@ -4,7 +4,8 @@ let spReportifyData = {
     params: {},         // Parameters from the URL. 
     sp: {
         ctx: {},        // SharePoint Context.
-        web: {}         // SharePoint get_web().
+        web: {},        // SharePoint get_web().
+        caml: {}        // SharePoint CAML Query.
     },
     user: {},           // Name and Email of Runtime user. 
     site: {},           // Info about the SharePoint Site.
@@ -19,6 +20,8 @@ const spReportify = {
  * Initialize the spReportify Environment.
  */
 init: function(InitMode = "builder"){
+    this.logBigTitle();
+    this.logTitle( `Initializing spReportity in "${InitMode}" mode...` );
     // Load Configurations
         spReportifyData.config = {
             url: _URL,
@@ -42,8 +45,10 @@ init: function(InitMode = "builder"){
 
         // Commands for Report Builder
         if( InitMode == "builder" ){
+            spReportifyData.sp.caml = new SP.CamlQuery();
             this.stackAdd( this.getLists );
             this.stackAdd( this.initBuilder );
+            this.stackAdd( this.builderToggleMode );
         }
         
         // Commends for Report Runner
@@ -69,6 +74,8 @@ getUser: function(){
             email: _api.get_email(),
             title: _api.get_title()
         };
+        spr.logTitle( "Runtime User Information" );
+        console.table( spReportifyData.user );
         spr.stackRun();
         },
         // Fail
@@ -86,6 +93,8 @@ getSite: function(){
     spReportifyData.site = {
         title: spReportifyData.sp.web.get_title()
     };
+    spr.logTitle( "SharePoint Site Information" );
+    console.table( spReportifyData.site );
     spr.stackRun();
 },
 
@@ -143,6 +152,8 @@ getLists: function(){
                     )
                 }
             }
+            spr.logTitle( "Available Lists" );
+            console.table( spReportifyData.builder.lists );
             spr.stackRun();
         },
         // Failure
@@ -161,16 +172,57 @@ getLists: function(){
     initBuilder: function(){
         // Add Options in the List Selector.
             var ctlListSelect = document.getElementById("lstDatasource");
+            ctlListSelect.options.length = 0;
             for( const list of spReportifyData.builder.lists ){
                 var ctlListOption = document.createElement('option');
                 ctlListOption.value = list.id;
                 ctlListOption.innerHTML = list.name;
                 ctlListSelect.appendChild( ctlListOption );
             }
+        // Add a "Select List" Option
+            var ctlListOption = document.createElement('option');
+            ctlListOption.value = null;
+            ctlListOption.innerHTML = "Select a datasource...";
+            ctlListSelect.prepend( ctlListOption );
+            ctlListSelect.value = null;
+
             document.getElementById("lstDatasource").addEventListener("change", spReportify.builderUpdateList );
-        //...
+        // Initial Builder Mode - Setting "add" and calling builderToggleMode to switch to "edit".
+            spReportifyData.builder["mode"] = "add";
+        
+        
+            //...
 
         spr.stackRun();
+    },
+
+
+    /**
+     * builderFeedReportlist
+     * Add Reports in the Report List.
+     */
+    builderFeedReportList: function(){
+        var ctlReportSelect = document.getElementById("lstReport");
+        ctlReportSelect.options.length = 0;
+        for( const report of spReportifyData.builder.reports ){
+            var ctlReportOption = document.createElement('option');
+            ctlReportOption.value = report.id;
+            ctlReportOption.innerHTML = report.title;
+            ctlReportSelect.appendChild( ctlReportOption );
+        }
+        // Add a "Select Report" Option
+        var ctlReportOption = document.createElement('option');
+        ctlReportOption.value = null;
+        ctlReportOption.innerHTML = "Select a report...";
+        ctlReportSelect.prepend( ctlReportOption );
+        ctlReportSelect.value = null;
+
+        document.getElementById("lstReport").addEventListener("change", spReportify.builderLoadReport );
+        document.getElementById("SelectReport").style.setProperty("display", "block");
+    
+        //...
+
+    spr.stackRun();
     },
 
 /**
@@ -180,7 +232,8 @@ getLists: function(){
 builderUpdateList: function(){
     spr.waitingShow( "Fetching Columns..." );
     spr.stackAdd( spr.builderGetColumns );
-
+    spr.stackAdd( spr.builderGetReports );
+    spr.stackAdd( spr.builderFeedReportList );
     spr.stackRun();
 },
 
@@ -195,7 +248,9 @@ builderGetColumns: function(){
         spReportifyData.builder["list"] = {};
         spReportifyData.builder["list"] = spReportifyData.builder.lists.filter(x => x.id == listId)[0];
         spReportifyData.builder.list["id"] = listId;
-        console.dir( spReportifyData.builder.list );
+
+        spr.logTitle( "Selected List" );
+        console.table( spReportifyData.builder.list );
 
         _api = spReportifyData.sp.web.get_lists().getById(listId).get_fields();
         spReportifyData.sp.ctx.load( _api );
@@ -248,8 +303,9 @@ builderGetColumns: function(){
                         if (nameA > nameB ){ return 1;  }
                         return 0;
                     });
-
-                console.dir( spReportifyData.builder.columns );
+                
+                spr.logTitle( "Available Columns in the Selected List" );
+                console.table( spReportifyData.builder.columns );
                 spr.stackRun();
             },
             // Failure
@@ -259,6 +315,119 @@ builderGetColumns: function(){
         );
         
     }
+},
+
+/**
+ * builderGetReports
+ * Retrieve Reports for the selected list.
+ */
+builderGetReports: function(){
+    var listId = document.getElementById("lstDatasource").value
+    if( listId != "undefined" && listId+"" != "" ){
+        spReportifyData.sp.caml.set_viewXml('<View><Query><Where><Eq><FieldRef Name=\'ListId\'/><Value Type=\'Text\'>' + listId + '</Value></Eq></Where></Query></View>');
+        _api = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).getItems( spReportifyData.sp.caml );
+        spReportifyData.sp.ctx.load( _api );
+        spReportifyData.sp.ctx.executeQueryAsync(
+            // Success
+            function(){
+                spReportifyData.builder["reports"] = [];
+                var enumReports = _api.getEnumerator();
+                while( enumReports.moveNext() ){
+                    var thisReport = enumReports.get_current();
+                    var thisReportId = thisReport.get_id();
+                    var thisReportTitle = thisReport.get_item("Title");
+                    var thisReportDescription = thisReport.get_item("Description");
+                    var thisReportSelect = thisReport.get_item("SelectEntries");
+                    var thisReportSort = thisReport.get_item("SortEntries");
+                    var thisReportShow = thisReport.get_item("ShowEntries");
+                    var thisReportQuery = thisReport.get_item("Query")
+
+
+                    spReportifyData.builder.reports.push({
+                        id: thisReportId,
+                        title: thisReportTitle,
+                        description: thisReportDescription,
+                        select: thisReportSelect,
+                        sort: thisReportSort,
+                        show: thisReportShow,
+                        query: thisReportQuery
+                    });
+                };
+
+                // Sort the list of reports
+                    spReportifyData.builder.reports.sort((a, b) => {
+                        const nameA = a.title.toLowerCase();
+                        const nameB = b.title.toLowerCase();
+                        if( nameA < nameB ){ return -1; }
+                        if (nameA > nameB ){ return 1;  }
+                        return 0;
+                    });
+
+                spr.logTitle( "Available Reports in the Selected List" );
+                console.table( spReportifyData.builder.reports );
+                spr.stackRun();
+            },
+            // Failure
+            function( sender, args ){
+                console.error('Unable to get Reports from builderGetReports() - ' + args.get_message() );
+            }
+        );
+        
+    }
+},
+
+/**
+ * builderToggleMode
+ * Switch between Edit an existing report and Create a new report.
+ */
+builderToggleMode: function(){
+    spReportifyData.builder.mode = ( spReportifyData.builder.mode == "edit" ? "add" : "edit" );
+    spr.logTitle( "Changing Builder Mode" );
+    console.log( `Current Mode: "${spReportifyData.builder.mode}"` );
+    if( spReportifyData.builder.mode == "edit" ){
+        document.getElementById("tabSwitchMode").innerHTML = "Create a new report...";
+        document.getElementById("SelectReportExisting").style.setProperty("display", "block");
+        document.getElementById("SelectReportCreate").style.setProperty("display", "none");
+    }else{
+        document.getElementById("tabSwitchMode").innerHTML = "Edit an existing report...";
+        document.getElementById("SelectReportExisting").style.setProperty("display", "none");
+        document.getElementById("SelectReportCreate").style.setProperty("display", "block");
+    }
+    console.log( `New Mode: "${spReportifyData.builder.mode}"` );
+    spr.stackRun();
+},
+
+/**
+ * Load a Report in the Builder.
+ */
+builderLoadReport: function(){
+    spReportifyData.builder.report = {};
+    if( spReportifyData.builder.mode == "edit" ){
+        spReportifyData.builder.report  = spReportifyData.builder.reports.filter(x => x.id == document.getElementById("lstReport").value )[0];
+    }else{
+        spReportifyData.builder.report = {
+            id: -1,
+            title: (document.getElementById("txtNewReportName").value).trim(),
+            select: null,
+            sort: null,
+            show: null,
+            description: null,
+            query: null
+        }
+    }
+
+    spr.logTitle(`Report to ${spReportifyData.builder.mode}`);
+    console.table( spReportifyData.builder.report );
+
+    // Draw the Builder Interface to display Options
+        // Hide the Report Selection Form
+
+
+        // Show the Editor Interface
+            document.getElementById("ReportBuilderSection").style.setProperty("display", "block");
+
+
+
 },
 
 
@@ -275,7 +444,7 @@ builderGetColumns: function(){
  */
     stackRun: function(){
         if( spReportifyData.stack.length == 0 ){
-            console.warn("Command stack is empty!");
+            spr.logMute("Command stack is empty!");
             spr.waitingHide();
             return;
         };
@@ -337,14 +506,39 @@ builderGetColumns: function(){
  */
     waitingHide: function(){
         document.getElementById( "wip" ).style.setProperty("display", "none");
-    }
+    },
+
+/**
+ * logBigTitle
+ * Display a Thank you / Welcome message in the Console, for branding purposes.
+ */
+    logBigTitle: function(){
+        console.log(`%cThank you for using spReportify!`, "color: #0C4767;font-family:Tahoma;font-weight:bold;font-size:24px;");
+    },
+/**
+ * logTitle
+ * Display a title in the Console.
+ */
+    logTitle: function( Title ){
+        console.log(`%c${Title}`, "color: #233E82;font-family:Tahoma;font-weight:bold;font-size:18px;");
+    },
+/**
+ * logMute
+ * Display an entry in the Console, light gray.
+ */
+    logMute: function( Message ){
+    console.log(`%c  ${Message}  `, "background: #D6E5E3;color:#04080F;font-family:Arial;");
+}
 
 
 
-
-
+    
 
 
 };
 
 let spr = spReportify;
+
+$(document).ready(function(){
+    spReportify.init();
+ });

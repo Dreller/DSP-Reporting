@@ -11,12 +11,13 @@
     <script type="text/javascript" src="../_layouts/15/sp.js"></script>
 
     <script src="bin/dconf.js"></script>
-    <script src="bin/d.js"></script>
-    <script src="bin/djs.js"></script>
-
     <script src="spReportify.js"></script>
 
-    <link rel="stylesheet" href="bin/pico.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="spReportify.css">
     <style>
         .icon{
             font-family: 'Segoe MDL2 Assets';
@@ -24,51 +25,47 @@
         }
 
     </style>
-
-    <script>
-    
-        $(document).ready(function(){
-           // dInit();
-            HelloDreller("build");
-        });
-    </script>
 </head>
 <body>
-    <main class="container">
+   <!-- Header -->
+   <header>
+        <span>SP Reportify</span>
+        <span>A Reporting Solution for your data in SharePoint!</span>
+   </header>
 
-    <!-- Header -->
-        <div>
-            <hgroup>
-                <h2>Report Builder for SharePoint</h2>
-                <h3 id="headUserLogon"></h3>
-            </hgroup>
-            <footer class="drellerSelectionDone" style="padding: 15px; background: #f9fafb; display:none;" id="headSelectionDone"></footer>
-            <hr class="drellerSelectionDone" style="display:none;">
-        </div>
 
-    <!-- One Moment Please -->
-        <div id="waiting" style="position: fixed;width: 100%; top: 15%; height: 350px; left: 0; justify-content: center; display: flex;">
-            <article id="waitingInfo" aria-busy="true">
-                One moment please...
-            </article>
-        </div>
-
-    <!-- Selector: Datasource (list) -->
-        <div id="SelectDatasource">
-            <label for="lstDatasource">Datasource:</label>
+    <!-- Selector: Datasource (list) --><label for="lstDatasource">Datasource:</label>
+        <div id="SelectDatasource" class="select">
+            
             <select id="lstDatasource">
                 <option value="">Choose an option...</option>
             </select>
         </div>
 
     <!-- Selector: Select Existing Report or create new one -->
-        <div id="SelectReport">
-            <div style="width:100%;text-align:right;">
-                <a id="tabExisting" href="#" style="display:none;" onclick="$('#SelectReportExisting').show();$('#SelectReportCreate').hide();$('#tabExisting').hide();$('#tabCreate').show();dreller.runtime.action = 'edit';">
+        <div id="SelectReport" style="display:none;">
+
+
+            <section id="BuilderFormSectionAction">
+                <div class="BuilderFormWrapperAction">
+                    <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceEdit" checked>
+                    <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceCreate">
+                    <label for="BuilderFormControlActionChoiceEdit" class="radioOption choiceEdit">
+                        <div class="BuilderFormControlActionDot"></div>
+                        <span>Edit a Report</span>
+                    </label>
+                    <label for="BuilderFormControlActionChoiceCreate" class="radioOption choiceCreate">
+                        <div class="BuilderFormControlActionDot"></div>
+                        <span>Create a Report</span>
+                    </label>
+                </div>
+            </section>
+
+            
+            <div style="width:100%;text-align:center;">
+                <br>
+                <a id="tabSwitchMode" href="#!" class="link" onclick="spReportify.builderToggleMode();">
                     Edit an existing report...
-                </a>
-                <a id="tabCreate" href="#" style="" onclick="$('#SelectReportExisting').hide();$('#SelectReportCreate').show();$('#tabExisting').show();$('#tabCreate').hide();dreller.runtime.action = 'create';">
-                    Create a new report...
                 </a>
             </div>
             <div id="SelectReportExisting" style="padding-top: 2rem;">
@@ -83,10 +80,12 @@
                 <label for="txtNewReportName">
                     Give your report a name:
                 </label>
-                <input type="text" id="txtNewReportName" />
-            </div>
-            <div style="width: 100%; text-align:right;">
-                <a href="#" role="button" class="primary" onclick="d_BuildEditor()">Ok</a>
+                <input type="text" id="txtNewReportName" autocomplete="off" />
+
+                <div style="width: 100%;">
+                    <br>
+                    <a href="#" role="button" class="button" onclick="spReportify.builderLoadReport();">Continue</a>
+                </div>
             </div>
         </div>
 
