@@ -1,3 +1,7 @@
+:root{
+  --main-color: #0F4C81;
+}
+
 *{
     font-family: Roboto, sans-serif;
 }
@@ -95,7 +99,7 @@ select:-moz-focusring{
 }
 
 .button:focus {
-  border-color: #008296;
+  border-color: var(--main-color);
   box-shadow: rgba(213, 217, 217, .5) 0 2px 5px 0;
   outline: 0;
 }
@@ -120,6 +124,7 @@ header span:last-child{
 
 section{
     width: 100%;
+    margin-top: 20px;
 }
 
 .BuilderFormWrapperAction{
@@ -157,7 +162,7 @@ section{
     left: 4px;
     width: 12px;
     height: 12px;
-    background: #0069d9;
+    background: var(--main-color);
     border-radius: 50%;
     opacity: 0;
     transform: scale(1.5);
@@ -168,8 +173,8 @@ input[type="radio"]{
   }
   #BuilderFormControlActionChoiceEdit:checked:checked ~ .choiceEdit,
   #BuilderFormControlActionChoiceCreate:checked:checked ~ .choiceCreate{
-    border-color: #0069d9;
-    background: #0069d9;
+    border-color: var(--main-color);
+    background: var(--main-color);
   }
   #BuilderFormControlActionChoiceEdit:checked:checked ~ .choiceEdit .dot,
   #BuilderFormControlActionChoiceCreate:checked:checked ~ .choiceCreate .dot{
@@ -187,4 +192,9 @@ input[type="radio"]{
   #BuilderFormControlActionChoiceEdit:checked:checked ~ .choiceEdit span,
   #BuilderFormControlActionChoiceCreate:checked:checked ~ .choiceCreate span{
     color: #fff;
+  }
+
+ .TextBoxError{
+    border: solid 2px #df1616 !important;
+    background-color: #fac8c8 !important;
   }

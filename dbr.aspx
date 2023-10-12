@@ -34,69 +34,132 @@
    </header>
 
 
-    <!-- Selector: Datasource (list) --><label for="lstDatasource">Datasource:</label>
-        <div id="SelectDatasource" class="select">
+<!-- Select the Datasource -->
+    <section id="BuilderFormSectionDatasource">
+        <label for="BuilderFormControlDatasource">
+            Select a Datasource:
+        </label>
+        <select id="BuilderFormControlDatasource">
             
-            <select id="lstDatasource">
-                <option value="">Choose an option...</option>
-            </select>
+        </select>
+    </section>
+
+
+<!-- Choose the Action to do: Edit or Create a Report -->
+    <section id="BuilderFormSectionAction" style="display:none;">
+        <div class="BuilderFormWrapperAction">
+            <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceEdit" onclick="spReportify.builderToggleMode(0);" checked>
+            <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceCreate" onclick="spReportify.builderToggleMode(1);">
+            <label for="BuilderFormControlActionChoiceEdit" class="radioOption choiceEdit">
+                <div class="BuilderFormControlActionDot"></div>
+                <span>Edit a Report</span>
+            </label>
+            <label for="BuilderFormControlActionChoiceCreate" class="radioOption choiceCreate">
+                <div class="BuilderFormControlActionDot"></div>
+                <span>Create a Report</span>
+            </label>
         </div>
+    </section>
 
-    <!-- Selector: Select Existing Report or create new one -->
-        <div id="SelectReport" style="display:none;">
+<!-- Select the Report to Edit -->
+    <section id="BuilderFormSectionReportPicker" style="display:none;">
+        <label for="BuilderFormControlReportPicker">
+            Choose the report to edit:
+        </label>
+        <select id="BuilderFormControlReportPicker">
+        </select>
+    </section>
 
-
-            <section id="BuilderFormSectionAction">
-                <div class="BuilderFormWrapperAction">
-                    <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceEdit" checked>
-                    <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceCreate">
-                    <label for="BuilderFormControlActionChoiceEdit" class="radioOption choiceEdit">
-                        <div class="BuilderFormControlActionDot"></div>
-                        <span>Edit a Report</span>
-                    </label>
-                    <label for="BuilderFormControlActionChoiceCreate" class="radioOption choiceCreate">
-                        <div class="BuilderFormControlActionDot"></div>
-                        <span>Create a Report</span>
-                    </label>
-                </div>
-            </section>
-
-            
-            <div style="width:100%;text-align:center;">
-                <br>
-                <a id="tabSwitchMode" href="#!" class="link" onclick="spReportify.builderToggleMode();">
-                    Edit an existing report...
-                </a>
-            </div>
-            <div id="SelectReportExisting" style="padding-top: 2rem;">
-                <label for="lstReport">
-                    Report to edit:
-                </label>
-                <select id="lstReport">
-                    <option value="">Choose an option...</option>
-                </select>
-            </div>
-            <div id="SelectReportCreate" style="display:none;padding-top: 2rem;">
-                <label for="txtNewReportName">
-                    Give your report a name:
-                </label>
-                <input type="text" id="txtNewReportName" autocomplete="off" />
-
-                <div style="width: 100%;">
-                    <br>
-                    <a href="#" role="button" class="button" onclick="spReportify.builderLoadReport();">Continue</a>
-                </div>
-            </div>
-        </div>
+<!-- Create a new Report -->
+    <section id="BuilderFormSectionReportNaming" style="display:none;">
+        <label for="BuilderFormControlReportNaming">
+            Give a name for your new report:
+        </label>
+        <input type="text" id="BuilderFormControlReportNaming" autocomplete="off" onkeyup="spReportify.builderValidateReportName();" />
+        <span id="BuilderFormAlertReportNaming_AlreadyUsed" style="display:none;">
+            This Report Name is already used for this Datasource!  Please use another name.
+        </span>
+        <section id="BuilderFormSubSectionReportNamingContinue">
+            <a href="#!" id="BuilderFormControlButtonNaming" role="button" class="button" onclick="spReportify.builderLoadReport();">Continue</a>
+        </section>
+    </section>
 
 
-    <!-- REPORT BUILDER -->
-    <section id="ReportBuilderSection" style="display:none;">
-        <div style="display: inline-block;padding: 12px 0px;">
+<!-- Builder Form -->
+    <section id="BuilderForm">
+
+    <!-- Toolbar -->
+        <section id="BuilderToolbar">
             <a href="#!" onclick="$('details').prop('open', true);">Expand all</a>&nbsp;|&nbsp;
             <a href="#!" onclick="$('details').prop('open', false);">Collapse all</a>&nbsp;|&nbsp;
-            <a href="#!" onclick="toggleModal(event)" data-target="data-dict">Dictionary</a>
-        </div>
+            <a href="#!" onclick="toggleModal(event)" data-target="data-dict">Dictionary</a>        
+        </section>
+
+    <!-- Select -->
+        <section id="BuilderFormSelect">
+            <h3>Selection</h3>
+            <table id="BuilderFormSelectTable">
+                <thead id="BuilderFormSelectTableHead">
+                    <tr>
+                        <th>Column</th>
+                        <th>Operator</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="BuilderFormSelectTableBody">
+
+                </tbody>
+            </table>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button">Add Row</a>
+        </section>
+
+    <!-- Sort -->
+        <section id="BuilderFormSort">
+            <h3>Sort</h3>
+            <table id="BuilderFormSortTable">
+                <thead id="BuilderFormSortTableHead">
+                    <tr>
+                        <th>Column</th>
+                        <th>Direction</th>
+                    </tr>
+                </thead>
+                <tbody id="BuilderFormSortTableBody">
+                    
+                </tbody>
+            </table>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button">Add Row</a>
+        </section>
+
+    <!-- Show -->
+        <section id="BuilderFormShow">
+            <h3>Show</h3>
+            <table id="BuilderFormShowTable">
+                <thead id="BuilderFormShowTableHead">
+                    <tr>
+                        <th>Column</th>
+                        <th>Header</th>
+                    </tr>
+                </thead>
+                <tbody id="BuilderFormShowTableBody">
+                    
+                </tbody>
+            </table>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button">Add Row</a>
+        </section>
+
+    <!-- Options -->
+        <section id="BuilderFormOptions">
+            <h3>Options</h3>
+            ...
+            
+        </section>
+    
+
+
+</section>  <!-- Builder Form -->
+    <!-- REPORT BUILDER -->
+    <section id="ReportBuilderSection" style="display:none;">
+
 
         <dialog id="data-dict">
             <article>

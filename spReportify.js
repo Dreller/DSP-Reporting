@@ -48,7 +48,7 @@ init: function(InitMode = "builder"){
             spReportifyData.sp.caml = new SP.CamlQuery();
             this.stackAdd( this.getLists );
             this.stackAdd( this.initBuilder );
-            this.stackAdd( this.builderToggleMode );
+            //this.stackAdd( this.builderToggleMode, 0 );
         }
         
         // Commends for Report Runner
@@ -171,7 +171,7 @@ getLists: function(){
  */
     initBuilder: function(){
         // Add Options in the List Selector.
-            var ctlListSelect = document.getElementById("lstDatasource");
+            var ctlListSelect = document.getElementById("BuilderFormControlDatasource");
             ctlListSelect.options.length = 0;
             for( const list of spReportifyData.builder.lists ){
                 var ctlListOption = document.createElement('option');
@@ -186,11 +186,8 @@ getLists: function(){
             ctlListSelect.prepend( ctlListOption );
             ctlListSelect.value = null;
 
-            document.getElementById("lstDatasource").addEventListener("change", spReportify.builderUpdateList );
-        // Initial Builder Mode - Setting "add" and calling builderToggleMode to switch to "edit".
-            spReportifyData.builder["mode"] = "add";
-        
-        
+            document.getElementById("BuilderFormControlDatasource").addEventListener("change", spReportify.builderUpdateList );
+
             //...
 
         spr.stackRun();
@@ -202,7 +199,7 @@ getLists: function(){
      * Add Reports in the Report List.
      */
     builderFeedReportList: function(){
-        var ctlReportSelect = document.getElementById("lstReport");
+        var ctlReportSelect = document.getElementById("BuilderFormControlReportPicker");
         ctlReportSelect.options.length = 0;
         for( const report of spReportifyData.builder.reports ){
             var ctlReportOption = document.createElement('option');
@@ -217,9 +214,9 @@ getLists: function(){
         ctlReportSelect.prepend( ctlReportOption );
         ctlReportSelect.value = null;
 
-        document.getElementById("lstReport").addEventListener("change", spReportify.builderLoadReport );
-        document.getElementById("SelectReport").style.setProperty("display", "block");
-    
+        document.getElementById("BuilderFormControlReportPicker").addEventListener("change", spReportify.builderLoadReport );
+        document.getElementById("BuilderFormSectionReportPicker").style.setProperty("display", "block");
+        document.getElementById("BuilderFormSectionAction").style.setProperty("display", "block");
         //...
 
     spr.stackRun();
@@ -242,7 +239,7 @@ builderUpdateList: function(){
  * Retrieve Columns for the selected list.
  */
 builderGetColumns: function(){
-    var listId = document.getElementById("lstDatasource").value
+    var listId = document.getElementById("BuilderFormControlDatasource").value
     if( listId != "undefined" && listId+"" != "" ){
         console.log( "Updating Builder for List ID '" + listId + "'" )
         spReportifyData.builder["list"] = {};
@@ -322,7 +319,7 @@ builderGetColumns: function(){
  * Retrieve Reports for the selected list.
  */
 builderGetReports: function(){
-    var listId = document.getElementById("lstDatasource").value
+    var listId = document.getElementById("BuilderFormControlDatasource").value
     if( listId != "undefined" && listId+"" != "" ){
         spReportifyData.sp.caml.set_viewXml('<View><Query><Where><Eq><FieldRef Name=\'ListId\'/><Value Type=\'Text\'>' + listId + '</Value></Eq></Where></Query></View>');
         _api = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).getItems( spReportifyData.sp.caml );
@@ -380,18 +377,20 @@ builderGetReports: function(){
  * builderToggleMode
  * Switch between Edit an existing report and Create a new report.
  */
-builderToggleMode: function(){
-    spReportifyData.builder.mode = ( spReportifyData.builder.mode == "edit" ? "add" : "edit" );
+builderToggleMode: function(TargetMode = 1){
+    var NewMode = ( TargetMode == 1 || typeof TargetMode == undefined ? "add" : "edit" );
+    if( NewMode == spReportifyData.builder.mode ){ return; }
     spr.logTitle( "Changing Builder Mode" );
     console.log( `Current Mode: "${spReportifyData.builder.mode}"` );
+    spReportifyData.builder.mode = NewMode;
     if( spReportifyData.builder.mode == "edit" ){
-        document.getElementById("tabSwitchMode").innerHTML = "Create a new report...";
-        document.getElementById("SelectReportExisting").style.setProperty("display", "block");
-        document.getElementById("SelectReportCreate").style.setProperty("display", "none");
+        document.getElementById("BuilderFormControlActionChoiceEdit").checked = true;
+        document.getElementById("BuilderFormSectionReportPicker").style.setProperty("display", "block");
+        document.getElementById("BuilderFormSectionReportNaming").style.setProperty("display", "none");
     }else{
-        document.getElementById("tabSwitchMode").innerHTML = "Edit an existing report...";
-        document.getElementById("SelectReportExisting").style.setProperty("display", "none");
-        document.getElementById("SelectReportCreate").style.setProperty("display", "block");
+        document.getElementById("BuilderFormControlActionChoiceCreate").checked = true;
+        document.getElementById("BuilderFormSectionReportPicker").style.setProperty("display", "none");
+        document.getElementById("BuilderFormSectionReportNaming").style.setProperty("display", "block");
     }
     console.log( `New Mode: "${spReportifyData.builder.mode}"` );
     spr.stackRun();
@@ -430,6 +429,25 @@ builderLoadReport: function(){
 
 },
 
+/**
+ * builderValidateReportName
+ */
+builderValidateReportName: function(){
+    var ControlRef = document.getElementById("BuilderFormControlReportNaming");
+    var TestedName = ControlRef.value;
+    TestedName = TestedName.toLowerCase().replace(/^\s+|\s+$/gm,'');
+    if( spReportifyData.builder.reports.filter( x => x.title.toLowerCase() == TestedName).length == 0 ){
+        ControlRef.classList.remove("TextBoxError");
+        document.getElementById("BuilderFormAlertReportNaming_AlreadyUsed").style.setProperty("display", "none");
+        document.getElementById("BuilderFormControlButtonNaming").style.setProperty("display", "block");
+    }else{
+        ControlRef.classList.add("TextBoxError");
+        document.getElementById("BuilderFormAlertReportNaming_AlreadyUsed").style.setProperty("display", "block");
+        document.getElementById("BuilderFormControlButtonNaming").style.setProperty("display", "none");
+    }
+    
+
+},
 
 /**
  * stackAdd
