@@ -198,3 +198,91 @@ input[type="radio"]{
     border: solid 2px #df1616 !important;
     background-color: #fac8c8 !important;
   }
+
+
+  table{
+    width: 100%;
+    table-layout: fixed;
+    border-spacing: 0px;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    margin-bottom: 20px;
+  }
+  td {
+    border-left: solid 1px #999da3;
+    border-bottom: solid 1px #999da3;
+    padding: 5px 10px;
+  }
+  tr > td:last-child{
+    border-left: solid 1px #999da3;
+    border-bottom: solid 1px #999da3;
+    border-right: solid 1px #999da3;
+  }
+  th{
+    border-left: solid 1px #999da3;
+    border-bottom: solid 1px #999da3;
+    border-top: solid 1px #999da3;
+  }
+  thead > tr, tr:hover{
+    background-color: #ebebeb;
+  }
+  thead > tr > th:first-child {
+    border-top-left-radius: 5px;
+  }
+  thead > tr > th:last-child {
+    border-top-right-radius: 5px;
+    border-right: solid 1px #999da3;
+  } 
+
+.tooltip{
+  position: relative;
+  display: inline-block;
+}
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+.pointer{
+  cursor: pointer;
+}
+
+ul.toolbar{
+  list-style: none;
+  list-style-type:none;
+  width: 100%;
+  border: solid 1px #68768A;
+  padding: 1rem 2rem;
+  margin-top: 1rem;
+  border-radius: 10px;
+  background-color: #68768A;
+  color: #fff;
+  display: inline-block;
+  text-align:center;
+}
+ul.toolbar > li{
+    display: inline-block;
+    padding: 0 0.5rem;
+    min-width: 7rem;
+    cursor: pointer;
+    text-align:center;
+}
+ul.toolbar > li:not(:last-child){
+    border-right: 1px solid #c3c3c3;
+}
+section.toolbar{
+  width: 70%;
+  margin: auto;
+}

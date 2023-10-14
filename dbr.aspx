@@ -33,7 +33,8 @@
         <span>A Reporting Solution for your data in SharePoint!</span>
    </header>
 
-
+<!-- First form: Select Datasource + Report -->
+<section id="BuilderIdentifyReport">
 <!-- Select the Datasource -->
     <section id="BuilderFormSectionDatasource">
         <label for="BuilderFormControlDatasource">
@@ -79,20 +80,51 @@
         <span id="BuilderFormAlertReportNaming_AlreadyUsed" style="display:none;">
             This Report Name is already used for this Datasource!  Please use another name.
         </span>
-        <section id="BuilderFormSubSectionReportNamingContinue">
-            <a href="#!" id="BuilderFormControlButtonNaming" role="button" class="button" onclick="spReportify.builderLoadReport();">Continue</a>
-        </section>
+        
+    </section>
+<!-- Continue button (Load/Create Report) -->
+    <section id="BuilderFormSectionLoadCreateReport" style="display:none;">
+        <a href="#!" id="BuilderFormControlButtonLoadCreate" role="button" class="button">Continue</a>
     </section>
 
+</section> <!-- End of BuilderIdentifyReport-->
+
+
+<!-- Read-Only View of the Datasource and Report Selection -->
+<section id="BuilderReportIdentity" style="display: none;">
+    <table>
+        <thead>
+            <tr>
+                <th>
+                    Datasource
+                </th>
+                <th>
+                    Report
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="BuilderReportIdentityDatasource">
+
+                </td>
+                <td id="BuilderReportIdentityReportName">
+                    
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
 
 <!-- Builder Form -->
-    <section id="BuilderForm">
+    <section id="BuilderForm" style="display:none;">
 
     <!-- Toolbar -->
-        <section id="BuilderToolbar">
-            <a href="#!" onclick="$('details').prop('open', true);">Expand all</a>&nbsp;|&nbsp;
-            <a href="#!" onclick="$('details').prop('open', false);">Collapse all</a>&nbsp;|&nbsp;
-            <a href="#!" onclick="toggleModal(event)" data-target="data-dict">Dictionary</a>        
+        <section id="BuilderToolbar" class="toolbar">
+            <ul class="toolbar">
+            <li onclick="abc">Dictionary</li>
+            <li onclick="abc">Save</li>
+            </ul>
         </section>
 
     <!-- Select -->
@@ -104,13 +136,14 @@
                         <th>Column</th>
                         <th>Operator</th>
                         <th>Value</th>
+                        <th>Options</th>
                     </tr>
                 </thead>
                 <tbody id="BuilderFormSelectTableBody">
 
                 </tbody>
             </table>
-            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button">Add Row</a>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button" onclick="spReportify.builderDrawRow(1);">Add Row</a>
         </section>
 
     <!-- Sort -->
@@ -121,13 +154,14 @@
                     <tr>
                         <th>Column</th>
                         <th>Direction</th>
+                        <th>Options</th>
                     </tr>
                 </thead>
                 <tbody id="BuilderFormSortTableBody">
                     
                 </tbody>
             </table>
-            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button">Add Row</a>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button" onclick="spReportify.builderDrawRow(2);">Add Row</a>
         </section>
 
     <!-- Show -->
@@ -138,13 +172,14 @@
                     <tr>
                         <th>Column</th>
                         <th>Header</th>
+                        <th>Options</th>
                     </tr>
                 </thead>
                 <tbody id="BuilderFormShowTableBody">
                     
                 </tbody>
             </table>
-            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button">Add Row</a>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button" onclick="spReportify.builderDrawRow(3);">Add Row</a>
         </section>
 
     <!-- Options -->

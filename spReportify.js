@@ -1,20 +1,36 @@
-let spReportifyData = {
-    config: {},         // Configurations
-    stack: [],          // Stack of functions to run.
-    params: {},         // Parameters from the URL. 
-    sp: {
-        ctx: {},        // SharePoint Context.
-        web: {},        // SharePoint get_web().
-        caml: {}        // SharePoint CAML Query.
-    },
-    user: {},           // Name and Email of Runtime user. 
-    site: {},           // Info about the SharePoint Site.
-    builder: {}         // Work Data for the Report Builder.
-}
-let _api;
+// Structure of spReportifyData
+    let spReportifyData = {
+        config: {},         // Configurations
+        stack: [],          // Stack of functions to run.
+        params: {},         // Parameters from the URL. 
+        sp: {
+            ctx: {},        // SharePoint Context.
+            web: {},        // SharePoint get_web().
+            caml: {}        // SharePoint CAML Query.
+        },
+        user: {},           // Name and Email of Runtime user. 
+        site: {},           // Info about the SharePoint Site.
+        builder: {}         // Work Data for the Report Builder.
+    }
+// Variable to refer to SP API
+    let _api;
 
 const spReportify = {
-
+vm: String.fromCharCode(253),
+// List of Operators
+_op: [
+    { op: "eq", label: "Equal", notation: "=", syntax: "seq" },
+    { op: "ne", label: "Not equal", notation: "<>", syntax: "seq" },
+    { op: "gt", label: "Greater than", notation: ">", syntax: "seq" },
+    { op: "ge", label: "Greater than or equal", notation: ">=", syntax: "seq" },
+    { op: "lt", label: "Less than", notation: "<", syntax: "seq" },
+    { op: "le", label: "Less than or equal", notation: "<=", syntax: "seq" }
+],
+// List of Directions
+_dir: [
+        { direction: "asc", label: "Ascending (A-Z)" },
+        { direction: "desc", label: "Descending (Z-A)"}
+    ],
 /**
  * init
  * Initialize the spReportify Environment.
@@ -48,7 +64,7 @@ init: function(InitMode = "builder"){
             spReportifyData.sp.caml = new SP.CamlQuery();
             this.stackAdd( this.getLists );
             this.stackAdd( this.initBuilder );
-            //this.stackAdd( this.builderToggleMode, 0 );
+            spReportifyData.builder.mode = "edit";
         }
         
         // Commends for Report Runner
@@ -214,9 +230,11 @@ getLists: function(){
         ctlReportSelect.prepend( ctlReportOption );
         ctlReportSelect.value = null;
 
-        document.getElementById("BuilderFormControlReportPicker").addEventListener("change", spReportify.builderLoadReport );
+       // document.getElementById("BuilderFormControlReportPicker").addEventListener("change", spReportify.builderLoadReport );
         document.getElementById("BuilderFormSectionReportPicker").style.setProperty("display", "block");
         document.getElementById("BuilderFormSectionAction").style.setProperty("display", "block");
+        document.getElementById("BuilderFormSectionLoadCreateReport").style.setProperty("display", "block");
+        document.getElementById("BuilderFormSectionLoadCreateReport").addEventListener("click", spReportify.builderLoadReport );
         //...
 
     spr.stackRun();
@@ -378,7 +396,7 @@ builderGetReports: function(){
  * Switch between Edit an existing report and Create a new report.
  */
 builderToggleMode: function(TargetMode = 1){
-    var NewMode = ( TargetMode == 1 || typeof TargetMode == undefined ? "add" : "edit" );
+    var NewMode = ( TargetMode == 1 || typeof TargetMode == "undefined" || typeof spReportifyData.builder.mode == "undefined" ? "add" : "edit" );
     if( NewMode == spReportifyData.builder.mode ){ return; }
     spr.logTitle( "Changing Builder Mode" );
     console.log( `Current Mode: "${spReportifyData.builder.mode}"` );
@@ -402,11 +420,11 @@ builderToggleMode: function(TargetMode = 1){
 builderLoadReport: function(){
     spReportifyData.builder.report = {};
     if( spReportifyData.builder.mode == "edit" ){
-        spReportifyData.builder.report  = spReportifyData.builder.reports.filter(x => x.id == document.getElementById("lstReport").value )[0];
+        spReportifyData.builder.report = spReportifyData.builder.reports.filter(x => x.id == document.getElementById("BuilderFormControlReportPicker").value )[0];
     }else{
         spReportifyData.builder.report = {
             id: -1,
-            title: (document.getElementById("txtNewReportName").value).trim(),
+            title: (document.getElementById("BuilderFormControlReportNaming").value).trim(),
             select: null,
             sort: null,
             show: null,
@@ -419,11 +437,32 @@ builderLoadReport: function(){
     console.table( spReportifyData.builder.report );
 
     // Draw the Builder Interface to display Options
-        // Hide the Report Selection Form
+        // Hide the Report Selection Form and show a read-only summary
+            spr.hide("BuilderIdentifyReport");
+            document.getElementById("BuilderReportIdentityDatasource").innerHTML = spReportifyData.builder.list.name;
+            document.getElementById("BuilderReportIdentityReportName").innerHTML = spReportifyData.builder.report.title;
+            spr.show("BuilderReportIdentity");
 
+        // Draw Lines in Sections
+            if( spReportifyData.builder.report.select != null ){
+                spReportifyData.builder.report.select.split("\n").forEach( function( thisRow ){
+                    spr.builderDrawRow(1, thisRow );
+                })
+            }
+            if( spReportifyData.builder.report.sort != null ){
+                spReportifyData.builder.report.sort.split("\n").forEach( function( thisRow ){
+                    spr.builderDrawRow(2, thisRow );
+                })
+            }
+            if( spReportifyData.builder.report.show != null ){
+                spReportifyData.builder.report.show.split("\n").forEach( function( thisRow ){
+                    spr.builderDrawRow(3, thisRow );
+                })
+            }
 
         // Show the Editor Interface
-            document.getElementById("ReportBuilderSection").style.setProperty("display", "block");
+            spr.show("BuilderForm");
+
 
 
 
@@ -439,13 +478,221 @@ builderValidateReportName: function(){
     if( spReportifyData.builder.reports.filter( x => x.title.toLowerCase() == TestedName).length == 0 ){
         ControlRef.classList.remove("TextBoxError");
         document.getElementById("BuilderFormAlertReportNaming_AlreadyUsed").style.setProperty("display", "none");
-        document.getElementById("BuilderFormControlButtonNaming").style.setProperty("display", "block");
+        document.getElementById("BuilderFormControlButtonLoadCreate").style.setProperty("display", "block");
     }else{
         ControlRef.classList.add("TextBoxError");
         document.getElementById("BuilderFormAlertReportNaming_AlreadyUsed").style.setProperty("display", "block");
-        document.getElementById("BuilderFormControlButtonNaming").style.setProperty("display", "none");
+        document.getElementById("BuilderFormControlButtonLoadCreate").style.setProperty("display", "none");
     }
     
+
+},
+
+
+/**
+ * builderDrawRow
+ * Add a new Row in the Section.
+ * SectionNumber: 1 = Select, 2 = Sort, 3 = Show.
+ * RowDefn:  null for a new row.
+ */
+builderDrawRow: function( SectionNumber, RowDefn = null ){
+    spr.logTitle("Add a new Row in Section # " + SectionNumber);
+    var RowUID = crypto.randomUUID();
+    console.log('Row UID: ' + RowUID ); 
+
+    // Parse the RowDefn if not null
+    if( RowDefn != null ){
+        // Explode the Row
+        let RowDef = RowDefn.split( spr.vm );
+        switch( SectionNumber ){
+            case 1:
+            /**
+             * Structure of a SELECT Entry.
+             * ------------------------------
+             * Index    Data
+             * -------- ---------------------
+             * 0        Kind: (R)egular.
+             * 1        Column Static Name.
+             * 2        Operator.
+             * 3        Value to compare for select.
+             */
+                RowColumn = RowDef[1];
+                RowOperator = RowDef[2];
+                RowValue = RowDef[3];
+                break;
+            case 2:
+            /**
+             * Structure of a SORT Entry.
+             * ------------------------------
+             * Index    Data
+             * -------- ---------------------
+             * 0        Kind: (R)egular.
+             * 1        Column Static Name.
+             * 2        Direction.
+             */
+                RowColumn = RowDef[1];
+                RowDirection = RowDef[2];
+                break;
+            case 3:
+            /**
+             * Structure of a SHOW Entry.
+             * ------------------------------
+             * Index    Data
+             * -------- ---------------------
+             * 0        Kind: (R)egular.
+             * 1        Column Static Name.
+             * 2        Column Header (Label/Title).
+             */
+                RowColumn = RowDef[1];
+                RowLabel = RowDef[2];
+                break;
+        }
+    }else{
+        var RowColumn = "";
+        var RowOperator = "";
+        var RowDirection = "";
+        var RowValue = "";
+        var RowLabel = ""
+    }
+
+    // Create the new row
+        var elRow = document.createElement("tr");
+        elRow.id = RowUID;
+
+    // Create the Column Selector
+        var elSelect = document.createElement("select");
+        elSelect.id = "Column";
+        // Insert Columns in the Select
+            spReportifyData.builder.columns.forEach( function( thisColumn ){
+                var elOption = document.createElement("option");
+                elOption.value = thisColumn.name;
+                elOption.text = thisColumn.title;
+                elSelect.appendChild( elOption );
+            });
+        // Set the Value of the Select
+        elSelect.value = RowColumn;
+    
+    // Add the Column Selector in a new cell in the new Row
+        var elCell = document.createElement("td");
+        elCell.appendChild( elSelect );
+        elRow.appendChild( elCell );
+
+    // Create the Operator Selector for Select
+    if( SectionNumber == 1 ){
+        var elOperator = document.createElement("select");
+        elOperator.id = "Operator";
+        // Insert all Operators
+            spr._op.forEach( function( thisOp ){
+                var elOption = document.createElement("option");
+                elOption.value = thisOp.op;
+                elOption.text = thisOp.label;
+                elOperator.appendChild( elOption );
+            });
+        // Set the Value of the Select
+        elOperator.value = RowOperator;
+
+        // Add this Selector in a new Cell
+        var elCell = document.createElement("td");
+        elCell.appendChild( elOperator );
+        elRow.appendChild( elCell );
+    }
+
+    // Create the Direction Selector for Sort
+    if( SectionNumber == 2 ){
+        var elDirection = document.createElement("select");
+        elDirection.id = "Direction";
+        // Insert all Operators
+            spr._dir.forEach( function( thisDir ){
+                var elOption = document.createElement("option");
+                elOption.value = thisDir.direction;
+                elOption.text = thisDir.label
+                elDirection.appendChild( elOption );
+            });
+        // Set the Value of the Select
+        elDirection.value = RowDirection;
+
+        // Add this Selector in a new Cell
+        var elCell = document.createElement("td");
+        elCell.appendChild( elDirection );
+        elRow.appendChild( elCell );
+    }
+
+    // Create a Textbox for Value/Label for Select and Show.
+    if( SectionNumber == 1 || SectionNumber == 3 ){
+        var elText = document.createElement("input");
+        elText.setAttribute("type", "text");
+        // Set the ID and Value
+        switch( SectionNumber ){
+            case 1:
+                elText.id = "Value";
+                elText.value = RowValue;
+                break;
+            case 3:
+                elText.id = "Label";
+                elText.value = RowLabel;
+                break;
+        }
+        // Add this Text Input in a new Cell
+        var elCell = document.createElement("td");
+        elCell.appendChild( elText );
+        elRow.appendChild( elCell );
+
+    }
+    
+    
+    // Add the set of options to this Row
+        var elCell = document.createElement("td");
+        // Source of Glyphs: https://www.svgrepo.com/collection/arrows-and-user-interface-2/
+        elCell.innerHTML = `<!--
+        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('up', '${RowUID}');">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 512 512" xml:space="preserve"><path d="M476.9 216.5 263.5 3a10.6 10.6 0 0 0-15 0L35.2 216.5c-4 4.2-4 11 .2 15 4.1 4 10.7 4 14.8 0L245.3 36.4v465a10.7 10.7 0 0 0 21.3 0v-465l195.1 195c4.3 4.1 11 4 15-.1 4.1-4.2 4.1-10.7.2-14.8z"/></svg>
+        <span class="tooltiptext">Move this row up</span></span>
+        &nbsp;
+        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('down', '${RowUID}');">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 511.9 511.9" xml:space="preserve"><path d="M476.7 280.4a10.6 10.6 0 0 0-15 0L266.5 475.6V11a11 11 0 0 0-9-10.9c-6.7-1-12.3 4.2-12.3 10.6v465L50 280.3c-4.3-4-11-4-15 .2s-4 10.7 0 14.9l213.3 213.3a10.6 10.6 0 0 0 15 0l213.3-213.3c4.2-4 4.2-10.9 0-15z"/></svg>
+        <span class="tooltiptext">Move this row down</span></span>
+        &emsp;-->
+        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('rm', '${RowUID}');">
+        <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 511.9 511.9" xml:space="preserve"><path d="M271.2 255.9 509 18c4-4.2 4-11-.2-15S498-1 493.9 3L256.1 240.7 18.3 3c-4.3-4-11-4-15 .3-4 4.2-4 10.7 0 14.8L241 256 3.3 493.7c-4.3 4-4.4 10.8-.2 15a10.6 10.6 0 0 0 15 .2l.2-.2 237.8-237.8 237.7 237.8c4.3 4 11 4 15-.2s4-10.7 0-14.8L271.3 255.9z"/></svg>
+        <span class="tooltiptext">Delete this row</span></span>
+        `;
+        elRow.appendChild( elCell );
+
+
+
+    // Add the new row in the right table
+        var TableName = "";
+        switch( SectionNumber ){
+            case 1:
+                TableName = "BuilderFormSelectTableBody";
+                break;
+            case 2:
+                TableName = "BuilderFormSortTableBody";
+                break;
+            case 3:
+                TableName = "BuilderFormShowTableBody";
+                break;
+        }
+        spr.logMute("Destination of Row: " + TableName );
+        document.getElementById(TableName).appendChild( elRow );
+},
+
+/**
+ * builderManipulateRow
+ * Manipulate a Row.
+ * Action:  rm, up, down.
+ */
+builderManipulateRow: function( Action, RowId ){
+    spr.logTitle("Action on Row: " + Action );
+    spr.logMute("Row ID: " + RowId );
+    
+    var elManipulate = document.getElementById( RowId );
+
+    switch( Action ){
+        case "rm": 
+            elManipulate.parentNode.removeChild( elManipulate );
+            break;
+    }
 
 },
 
@@ -546,8 +793,36 @@ builderValidateReportName: function(){
  */
     logMute: function( Message ){
     console.log(`%c  ${Message}  `, "background: #D6E5E3;color:#04080F;font-family:Arial;");
+},
+/**
+ * logError
+ * Display an entry in the Console, bold error.
+ */
+logError: function( Message ){
+    console.log(`%c  ${Message}  `, "background: #E81123;color:#fff;font-family:Arial;font-weight:bold;");
+},
+/**
+ * show
+ * Show an Element.
+ */
+show: function( ElementId ){
+    if( document.getElementById( ElementId ) ){
+        document.getElementById( ElementId ).style.setProperty("display", "block");
+    }else{
+        spr.logError( `Requested to SHOW Element "${ElementId}" but this Element is NOT FOUND.` );
+    }
+},
+/**
+ * hide
+ * Hide an Element.
+ */
+hide: function( ElementId ){
+    if( document.getElementById( ElementId ) ){
+        document.getElementById( ElementId ).style.setProperty("display", "none");
+    }else{
+        spr.logError( `Requested to HIDE Element "${ElementId}" but this Element is NOT FOUND.` );
+    }
 }
-
 
 
     
