@@ -46,6 +46,9 @@ init: function(InitMode = "builder"){
             page: (window.location.pathname).split("/").pop()
         };
 
+        this.logMute("spReportifyData.environ");
+        console.table( spReportifyData.environ );
+
     // Load Configurations
         spReportifyData.config = {
             url: _URL,
@@ -56,6 +59,9 @@ init: function(InitMode = "builder"){
             allowHiddenLists: _ALLOW_LIST_HIDDEN,
             alwaysAllowFields: _ALLOW_FIELDS_ALWAYS
         }
+        this.logMute("spReportifyData.config");
+        console.table( spReportifyData.config );
+        
     // SharePoint Site Context
         spReportifyData.sp.ctx = new SP.ClientContext( spReportifyData.config.url );
         spReportifyData.sp.web = spReportifyData.sp.ctx.get_web();
