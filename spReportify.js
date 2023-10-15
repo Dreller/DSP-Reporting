@@ -525,6 +525,19 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
     spr.logTitle("Add a new Row in Section # " + SectionNumber);
     var RowUID = crypto.randomUUID();
     console.log('Row UID: ' + RowUID ); 
+    // Set the Literal Section Name
+    var SectionName = "";
+    switch( SectionNumber ){
+        case 1:
+            SectionName = "Select";
+            break;
+        case 2:
+            SectionName = "Sort";
+            break;
+        case 3:
+            SectionName = "Show";
+            break;
+    }
 
     // Parse the RowDefn if not null
     if( RowDefn != null ){
@@ -583,11 +596,11 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
 
     // Create the new row
         var elRow = document.createElement("tr");
-        elRow.id = RowUID;
+        elRow.id = SectionName + "_" + RowUID;
 
     // Create the Column Selector
         var elSelect = document.createElement("select");
-        elSelect.id = "Column";
+        elSelect.id = "Column_" + RowUID;
         // Insert Columns in the Select
             spReportifyData.builder.columns.forEach( function( thisColumn ){
                 var elOption = document.createElement("option");
@@ -606,7 +619,7 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
     // Create the Operator Selector for Select
     if( SectionNumber == 1 ){
         var elOperator = document.createElement("select");
-        elOperator.id = "Operator";
+        elOperator.id = "Operator_" + RowUID;
         // Insert all Operators
             spr._op.forEach( function( thisOp ){
                 var elOption = document.createElement("option");
@@ -626,7 +639,7 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
     // Create the Direction Selector for Sort
     if( SectionNumber == 2 ){
         var elDirection = document.createElement("select");
-        elDirection.id = "Direction";
+        elDirection.id = "Direction_" + RowUID;
         // Insert all Operators
             spr._dir.forEach( function( thisDir ){
                 var elOption = document.createElement("option");
@@ -658,6 +671,8 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
                 elText.value = RowLabel;
                 break;
         }
+        // Append RowUID to the ID
+            elText.id = elText.id + "_" + RowUID;
         // Add this Text Input in a new Cell
         var elCell = document.createElement("td");
         elCell.appendChild( elText );
@@ -670,15 +685,15 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
         var elCell = document.createElement("td");
         // Source of Glyphs: https://www.svgrepo.com/collection/arrows-and-user-interface-2/
         elCell.innerHTML = `<!--
-        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('up', '${RowUID}');">
+        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('up', '${elRow.id}');">
         <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 512 512" xml:space="preserve"><path d="M476.9 216.5 263.5 3a10.6 10.6 0 0 0-15 0L35.2 216.5c-4 4.2-4 11 .2 15 4.1 4 10.7 4 14.8 0L245.3 36.4v465a10.7 10.7 0 0 0 21.3 0v-465l195.1 195c4.3 4.1 11 4 15-.1 4.1-4.2 4.1-10.7.2-14.8z"/></svg>
         <span class="tooltiptext">Move this row up</span></span>
         &nbsp;
-        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('down', '${RowUID}');">
+        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('down', '${elRow.id}');">
         <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 511.9 511.9" xml:space="preserve"><path d="M476.7 280.4a10.6 10.6 0 0 0-15 0L266.5 475.6V11a11 11 0 0 0-9-10.9c-6.7-1-12.3 4.2-12.3 10.6v465L50 280.3c-4.3-4-11-4-15 .2s-4 10.7 0 14.9l213.3 213.3a10.6 10.6 0 0 0 15 0l213.3-213.3c4.2-4 4.2-10.9 0-15z"/></svg>
         <span class="tooltiptext">Move this row down</span></span>
         &emsp;-->
-        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('rm', '${RowUID}');">
+        <span class="tooltip pointer" onclick="spReportify.builderManipulateRow('rm', '${elRow.id}');">
         <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 511.9 511.9" xml:space="preserve"><path d="M271.2 255.9 509 18c4-4.2 4-11-.2-15S498-1 493.9 3L256.1 240.7 18.3 3c-4.3-4-11-4-15 .3-4 4.2-4 10.7 0 14.8L241 256 3.3 493.7c-4.3 4-4.4 10.8-.2 15a10.6 10.6 0 0 0 15 .2l.2-.2 237.8-237.8 237.7 237.8c4.3 4 11 4 15-.2s4-10.7 0-14.8L271.3 255.9z"/></svg>
         <span class="tooltiptext">Delete this row</span></span>
         `;
@@ -721,6 +736,105 @@ builderManipulateRow: function( Action, RowId ){
     }
 
 },
+
+builderSave: function(){
+    spr.logTitle( "Save the Report ");
+
+    // Build Select, Sort and Show Strings
+
+        // Select
+        var ThisArray = [];
+        var Rows = document.querySelectorAll('[id^="Select_"]');
+
+        Rows.forEach( function( thisRow ){
+            var thisRowUID = (thisRow.id).split("_")[1];
+            var Column = document.getElementById("Column_" + thisRowUID).value;
+            // TODO: IF COLUMN IS NOT SET
+            var Operator = document.getElementById("Operator_" + thisRowUID).value;
+            var Value = document.getElementById("Value_" + thisRowUID).value;
+
+            ThisArray.push( ([ "R", Column, Operator, Value ]).join( spr.vm ) );
+        });
+        var StringSelect = ThisArray.join( "\n" );
+
+            spr.logMute( 'SELECT' );
+            console.table( ThisArray );
+            console.log( StringSelect );
+
+        // Sort
+        var ThisArray = [];
+        var Rows = document.querySelectorAll('[id^="Sort_"]');
+    
+        Rows.forEach( function( thisRow ){
+            var thisRowUID = (thisRow.id).split("_")[1];
+            var Column = document.getElementById("Column_" + thisRowUID).value;
+            // TODO: IF COLUMN IS NOT SET
+            var Direction = document.getElementById("Direction_" + thisRowUID).value;
+    
+            ThisArray.push( ([ "R", Column, Direction ]).join( spr.vm ) );
+        });
+        var StringSort = ThisArray.join( "\n" );
+    
+            spr.logMute( 'SORT' );
+            console.table( ThisArray );
+            console.log( StringSort );
+
+        // Show
+        var ThisArray = [];
+        var Rows = document.querySelectorAll('[id^="Show_"]');
+    
+        Rows.forEach( function( thisRow ){
+            var thisRowUID = (thisRow.id).split("_")[1];
+            var Column = document.getElementById("Column_" + thisRowUID).value;
+            // TODO: IF COLUMN IS NOT SET
+            var Label = document.getElementById("Label_" + thisRowUID).value;
+    
+            ThisArray.push( ([ "R", Column, Label ]).join( spr.vm ) );
+        });
+        var StringShow = ThisArray.join( "\n" );
+    
+            spr.logMute( 'SHOW' );
+            console.table( ThisArray );
+            console.log( StringShow );
+
+
+
+
+
+        // Save to SharePoint Report List
+            // Create or Retrieve the record
+            if( spReportifyData.builder.mode == "edit" ){
+                this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).getItemById( spReportifyData.builder.report.id );
+            }else{
+                this.NewReportRecord = new SP.ListItemCreationInformation();
+                this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).addItem( NewReportRecord );
+            }
+
+            // Set Values
+            this.ReportRecord.set_item('Title', spReportifyData.builder.report.title );
+            this.ReportRecord.set_item('ListId', spReportifyData.builder.list.id );
+
+            this.ReportRecord.set_item('SelectEntries', StringSelect );
+            this.ReportRecord.set_item('SortEntries', StringSort );
+            this.ReportRecord.set_item('ShowEntries', StringShow );
+
+            // Update Record
+            this.ReportRecord.update();
+
+            // Send Query
+            spReportifyData.sp.ctx.executeQueryAsync(
+                Function.createDelegate( this, this.builderSave_Success ),
+                Function.createDelegate( this, this.builderSave_Failed )
+            );
+},
+
+builderSave_Success: function(){
+    alert( 'Report Saved !');
+},
+builderSave_Failed: function( sender, args ){
+    spr.logError( args.get_message() );
+},
+
 
 /**
  * stackAdd
