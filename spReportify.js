@@ -10,7 +10,8 @@
         },
         user: {},           // Name and Email of Runtime user. 
         site: {},           // Info about the SharePoint Site.
-        builder: {}         // Work Data for the Report Builder.
+        builder: {},        // Work Data for the Report Builder.
+        environ: {}         // Environment (Browser, Language, etc.)
     }
 // Variable to refer to SP API
     let _api;
@@ -39,7 +40,12 @@ init: function(InitMode = "builder"){
     this.logBigTitle();
     this.logTitle( `Initializing spReportity in "${InitMode}" mode...` );
     // Load Environment Information
-        
+        spReportifyData.environ = {
+            language: ((window.navigator.language).split("-")[0]).toLowerCase(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            page: (window.location.pathname).split("/").pop()
+        };
+
     // Load Configurations
         spReportifyData.config = {
             url: _URL,
@@ -84,7 +90,7 @@ init: function(InitMode = "builder"){
  * Retrieve Current User basic Information.
  */
 getUser: function(){
-    this.waitingShow( "Identifying User..." );
+    spr.waitingShow( "Identifying User..." );
     _api = spReportifyData.sp.web.get_currentUser();
     spReportifyData.sp.ctx.load( _api );
     spReportifyData.sp.ctx.executeQueryAsync(
@@ -110,7 +116,7 @@ getUser: function(){
  * Retrieve SP Site Information
  */
 getSite: function(){
-    this.waitingShow( "Getting Source Site Name..." );
+    spr.waitingShow( "Getting Source Site Name..." );
     spReportifyData.site = {
         title: spReportifyData.sp.web.get_title()
     };
