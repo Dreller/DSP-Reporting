@@ -179,155 +179,45 @@
 
     <!-- Options -->
         <section id="BuilderFormOptions">
-            <h3>Options</h3>
-            ...
+            <h3>Other Settings and Options</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            Option
+                        </th>
+                        <th>
+                            Description
+                        </th>
+                        <th>
+                            Value
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Report Description -->
+                    <tr>
+                        <td>
+                            Report Description
+                        </td>
+                        <td>
+                            Description displayed when a user is running the report.  It can be used to describe what the user is looking at.
+                        </td>
+                        <td>
+                            <textarea id="BuilderFormOptionDescription">
+
+                            </textarea>
+                        </td>
+                    </tr>
+                    <!-- .. -->
+                </tbody>
+            </table>
             
         </section>
     
 
 
 </section>  <!-- Builder Form -->
-    <!-- REPORT BUILDER -->
-    <section id="ReportBuilderSection" style="display:none;">
-
-
-        <dialog id="data-dict">
-            <article>
-                <header>
-                    <a href="#close" aria-label="Close" class="close" data-target="data-dict" onclick="toggleModal(event)"></a>
-                    Data Dictionary
-                </header>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Column</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataDictBody">
-
-                    </tbody>
-                </table>
-            </article>
-          </dialog>
-
-        <!-- Select -->
-            <details open>
-                <summary role="button" class="secondary">
-                    Select
-                </summary>
-                <p>
-                    <table id="selectTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Column
-                                </th>
-                                <th>
-                                    Operator
-                                </th>
-                                <th>
-                                    Value
-                                </th>
-                                <th>
-                                    Options
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="selectTBody"></tbody>
-                    </table>
-                </p>
-                <div style="display: inline-block;padding: 12px 0px;">
-                    <a href="#!" onclick="d_BuilderAddItem({type:'select'})">Add row</a>
-                </div>
-            </details>
-
-        <!-- Sort -->
-            <details open>
-                <summary role="button" class="secondary">
-                    Sort
-                </summary>
-                <p>
-                    <table id="sortTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Column
-                                </th>
-                                <th>
-                                    Direction
-                                </th>
-                                <th>
-                                    Options
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="sortTBody"></tbody>
-                    </table>
-                </p>
-                <div style="display: inline-block;padding: 12px 0px;">
-                    <a href="#!" onclick="d_BuilderAddItem({type:'sort'})">Add row</a>
-                </div>
-            </details>
-
-        <!-- Show -->
-            <details open>
-                <summary role="button" class="secondary">
-                    Show
-                </summary>
-                <p>
-                    <table id="showTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Column
-                                </th>
-                                <th>
-                                    Column Title
-                                </th>
-                                <th>
-                                    Options
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="showTBody"></tbody>
-                    </table>
-                </p>
-                <div style="display: inline-block;padding: 12px 0px;">
-                    <a href="#!" onclick="d_BuilderAddItem({type:'show'})">Add row</a>
-                </div>
-            </details>
-
-        <!-- Report options -->
-            <details>
-                <summary role="button" class="contrast">
-                    Report Options
-                </summary>
-                <p>
-                    Additional options goes here.
-                </p>
-            </details>
-
-        <!-- Report URL Parameters -->
-            <details>
-                <summary role="button" class="contrast">
-                    URL Parameters
-                </summary>
-                <p>
-                    Mappings goes here.  It will be a feature to use URL Parameters in <em>Select</em>.
-                </p>
-            </details>
-
-
-
-        <!-- Save Button -->
-        <p>
-            <a href="#!" role="button" class="contrast" onclick="d_BuilderSaveReport();">Save report</a>
-        </p>
-
-    </section>
-</main>
 
 
 

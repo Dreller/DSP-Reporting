@@ -6,7 +6,7 @@
     font-family: Roboto, sans-serif;
 }
 
-input[type="text"]{
+input[type="text"], textarea{
     width: 90%;
     background-color: #f5f5f5;
     border: thin solid #c3c3c3;
@@ -212,6 +212,7 @@ input[type="radio"]{
     border-left: solid 1px #999da3;
     border-bottom: solid 1px #999da3;
     padding: 5px 10px;
+    vertical-align: top;
   }
   tr > td:last-child{
     border-left: solid 1px #999da3;

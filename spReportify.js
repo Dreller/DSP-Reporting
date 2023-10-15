@@ -486,6 +486,9 @@ builderLoadReport: function(){
                 })
             }
 
+        // Report Options
+            document.getElementById("BuilderFormOptionDescription").value = spReportifyData.builder.report.description;
+
         // Show the Editor Interface
             spr.show("BuilderForm");
 
@@ -813,6 +816,7 @@ builderSave: function(){
             // Set Values
             this.ReportRecord.set_item('Title', spReportifyData.builder.report.title );
             this.ReportRecord.set_item('ListId', spReportifyData.builder.list.id );
+            this.ReportRecord.set_item('Description', document.getElementById("BuilderFormOptionDescription").value);
 
             this.ReportRecord.set_item('SelectEntries', StringSelect );
             this.ReportRecord.set_item('SortEntries', StringSort );
