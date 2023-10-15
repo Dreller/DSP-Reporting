@@ -286,3 +286,44 @@ section.toolbar{
   width: 70%;
   margin: auto;
 }
+
+div#BuilderDataDictionary{
+  position: fixed;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  top: 3em;
+  left: 3em;
+  right: 3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  border: 1px solid #4d4d4d;
+  padding: 1em;
+  vertical-align:top;
+  box-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.5), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  &.open{
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
+  }
+  &-container{
+    border-radius:5px;
+    background:#fff;
+    position: relative;
+    padding: 20px;
+  }
+  &-close{
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    outline: none;
+    appearance: none;
+    color: red;
+    background: none;
+    border: 0px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+}

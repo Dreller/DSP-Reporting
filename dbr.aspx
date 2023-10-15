@@ -18,13 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="spReportify.css">
-    <style>
-        .icon{
-            font-family: 'Segoe MDL2 Assets';
-            cursor:pointer;
-        }
 
-    </style>
 </head>
 <body>
    <!-- Header -->
@@ -122,7 +116,7 @@
     <!-- Toolbar -->
         <section id="BuilderToolbar" class="toolbar">
             <ul class="toolbar">
-            <li onclick="abc">Dictionary</li>
+            <li data-modal="BuilderDataDictionary">Dictionary</li>
             <li onclick="abc">Save</li>
             </ul>
         </section>
@@ -333,5 +327,42 @@
 
     </section>
 </main>
+
+
+
+<!-- Data Dictionary -->
+<div id="BuilderDataDictionary" class="modal">
+    <div class="modal-bg modal-exit"></div>
+    <div class="modal-container">
+        <div style="width: 100%;">
+            <h2 style="float:left;">Data Dictionary</h2>
+            <button style="float:right;cursor:pointer;" class="modal-close modal-exit">X</button>
+        </div>
+        <table id="BuilderDictionaryTable">
+            <thead id="BuilderDictionaryTableHead">
+                <tr>
+                    <th>
+                        Column Title
+                    </th>
+                    <th>
+                        Static Name
+                    </th>
+                    <th>
+                        Data Type
+                    </th>
+                    <th>
+                        Description
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="BuilderDictionaryTableBody">
+
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+
 
 </body>
