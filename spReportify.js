@@ -38,6 +38,8 @@ _dir: [
 init: function(InitMode = "builder"){
     this.logBigTitle();
     this.logTitle( `Initializing spReportity in "${InitMode}" mode...` );
+    // Load Environment Information
+        
     // Load Configurations
         spReportifyData.config = {
             url: _URL,
@@ -55,12 +57,12 @@ init: function(InitMode = "builder"){
 
     // Stack Commands
         this.waitingCreate();
-        this.waitingShow( "Starting..." );
         this.stackAdd( this.getUser );
         this.stackAdd( this.getSite );
 
         // Commands for Report Builder
         if( InitMode == "builder" ){
+            this.waitingShow( "Initializing Report Builder..." );
             spReportifyData.sp.caml = new SP.CamlQuery();
             this.stackAdd( this.getLists );
             this.stackAdd( this.initBuilder );
@@ -69,6 +71,7 @@ init: function(InitMode = "builder"){
         
         // Commends for Report Runner
         if( InitMode == "runner" ){
+            this.waitingShow( "Initializing Report Runner..." );
             //...
         }
 
@@ -81,6 +84,7 @@ init: function(InitMode = "builder"){
  * Retrieve Current User basic Information.
  */
 getUser: function(){
+    this.waitingShow( "Identifying User..." );
     _api = spReportifyData.sp.web.get_currentUser();
     spReportifyData.sp.ctx.load( _api );
     spReportifyData.sp.ctx.executeQueryAsync(
@@ -106,6 +110,7 @@ getUser: function(){
  * Retrieve SP Site Information
  */
 getSite: function(){
+    this.waitingShow( "Getting Source Site Name..." );
     spReportifyData.site = {
         title: spReportifyData.sp.web.get_title()
     };
@@ -888,17 +893,13 @@ builderSave_Failed: function( sender, args ){
     waitingCreate: function(){
         var ctlDivWaiting = document.createElement('div');
         ctlDivWaiting.id = "wip";
-        ctlDivWaiting.style.setProperty("position", "fixed");
-        ctlDivWaiting.style.setProperty("width", "100%");
-        ctlDivWaiting.style.setProperty("top", "15%");
-        ctlDivWaiting.style.setProperty("height", "350px");
-        ctlDivWaiting.style.setProperty("left", "0");
-        ctlDivWaiting.style.setProperty("justify-content", "center");
-        ctlDivWaiting.style.setProperty("vertical-align", "middle");
-        ctlDivWaiting.style.setProperty("display", "flex");
-        ctlDivWaiting.style.setProperty("background-color", "yellow");
-        ctlDivWaiting.innerHTML = `<span id="wipTell">One moment please...</span>`;
+        ctlDivWaiting.classList.add("pleaseWait");
+        ctlDivWaiting.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:flex-start;">
+        <svg id="wipSpinner" width="100px" height="100px" viewBox="0 0 100 100" xmlnx="http://www.w3.org/2000/svg">
+            <circle id="wipSpinnerAnime" cx="50" cy="50" r="45" />
+        </svg><div><span id="wipTell"></span></div></div>`;
         document.body.appendChild( ctlDivWaiting );
+        spr.show("wip");
         this.stackRun();
     },
 /**
@@ -907,13 +908,14 @@ builderSave_Failed: function( sender, args ){
  */
     waitingShow: function( Message = "" ){
         document.getElementById( "wipTell" ).innerHTML = (Message == "" ? "One moment please..." : Message );
-        document.getElementById( "wip" ).style.setProperty("display", "block");
+        spr.show( "wip" );
     },
 /**
  * waitingHide
  * Hide the "Please Wait..." popup.
  */
     waitingHide: function(){
+        spr.hide( "wip" );
         document.getElementById( "wip" ).style.setProperty("display", "none");
     },
 
