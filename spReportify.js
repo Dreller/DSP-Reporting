@@ -11,7 +11,8 @@
         user: {},           // Name and Email of Runtime user. 
         site: {},           // Info about the SharePoint Site.
         builder: {},        // Work Data for the Report Builder.
-        environ: {}         // Environment (Browser, Language, etc.)
+        environ: {},        // Environment (Browser, Language, etc.)
+        runner: {}
     }
 // Variable to refer to SP API
     let _api;
@@ -36,9 +37,9 @@ _dir: [
  * init
  * Initialize the spReportify Environment.
  */
-init: function(InitMode = "builder"){
+init: function(){
     this.logBigTitle();
-    this.logTitle( `Initializing spReportity in "${InitMode}" mode...` );
+    this.logTitle( `Initializing spReportity...` );
     // Load Environment Information
         spReportifyData.environ = {
             language: ((window.navigator.language).split("-")[0]).toLowerCase(),
@@ -62,6 +63,14 @@ init: function(InitMode = "builder"){
         this.logMute("spReportifyData.config");
         console.table( spReportifyData.config );
         
+        // Initialization Mode
+        spReportifyData.environ["mode"] = (spReportifyData.environ.page == _SPREPORTIFY_BUILDER_PAGE ? "builder" : "runner");
+        this.start();
+
+},
+
+start: function(){
+    spr.logTitle( `Starting in "${spReportifyData.environ.mode}" mode` );
     // SharePoint Site Context
         spReportifyData.sp.ctx = new SP.ClientContext( spReportifyData.config.url );
         spReportifyData.sp.web = spReportifyData.sp.ctx.get_web();
@@ -73,8 +82,8 @@ init: function(InitMode = "builder"){
         this.stackAdd( this.getSite );
 
         // Commands for Report Builder
-        if( InitMode == "builder" ){
-            this.waitingShow( "Initializing Report Builder..." );
+        if( spReportifyData.environ.mode == "builder" ){
+            this.waitingShow( "Starting Report Builder..." );
             spReportifyData.sp.caml = new SP.CamlQuery();
             this.stackAdd( this.getLists );
             this.stackAdd( this.initBuilder );
@@ -82,8 +91,11 @@ init: function(InitMode = "builder"){
         }
         
         // Commends for Report Runner
-        if( InitMode == "runner" ){
-            this.waitingShow( "Initializing Report Runner..." );
+        if( spReportifyData.environ.mode == "runner" ){
+            this.waitingShow( "Starting Report Runner..." );
+            this.stackAdd( this.getParams );
+            this.stackAdd( this.runnerGetReport );
+
             //...
         }
 
@@ -913,6 +925,103 @@ builderSave_Failed: function( sender, args ){
     spr.logError( args.get_message() );
 },
 
+runnerGetReport: function( Identifier ){
+    spr.waitingShow( "Requesting the report definition..." );
+    spReportifyData.runner["api"] = spReportifyData.sp.web.get_lists().getByTitle( spReportifyData.config.reportListName ).getItemById( spReportifyData.params.rpt );
+    spReportifyData.sp.ctx.load( spReportifyData.runner.api );
+    spReportifyData.sp.ctx.executeQueryAsync( 
+        Function.createDelegate( this, spr.runnerParseReport ),
+        Function.createDelegate( this, spr.builderSave_Failed )
+    );
+},
+
+runnerParseReport: function(){
+    spr.waitingShow( "Reading the report definition..." );
+    spReportifyData.runner["report"] = {
+        title: spReportifyData.runner.api.get_item("Title"),
+        listId: spReportifyData.runner.api.get_item("ListId"),
+        description: spReportifyData.runner.api.get_item("Description"),
+        columns: spReportifyData.runner.api.get_item("ShowEntries"),
+        query: spReportifyData.runner.api.get_item("Query")
+    };
+    spr.logTitle("Report");
+    console.table( spReportifyData.runner.report );
+
+    spr.runnerGetData();
+},
+
+runnerGetData: function(){
+    spr.waitingShow( "Reading data..." );
+
+
+    var AjaxOptions = {
+        url: `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}` ,
+        method: "GET",
+        async: false,
+        headers: {
+            "accept":"application/json;odata=verbose",
+            "content-type":"application/json;odata=verbose"
+        }
+    }
+
+    // Send Request to Server
+    $.ajax( AjaxOptions )
+    .done( function ( data ){
+        spReportifyData.runner["data"] = data.d.results;
+        spr.runnerDrawReport();
+        
+    })
+    .fail( function( data){
+        if( typeof data.responseJSON.error.message.value !== undefined ){
+            spr.logError( data.responseJSON.error.message.value );
+        }
+    })
+
+},
+
+
+runnerDrawReport: function(){
+
+    document.getElementById("RunnerReportTitle").innerHTML = spReportifyData.runner.report.title;
+    document.getElementById("RunnerRuntimeUser").innerHTML = spReportifyData.user.title + " on " + spReportifyData.site.title;
+
+    // Decompose the structure of the Show Columns
+    spReportifyData.runner["columns"] = [];
+    spReportifyData.runner.report.columns.split("\n").forEach( function( thisLine ){
+        var thisEntry = thisLine.split( spr.vm );
+        spReportifyData.runner.columns.push({
+            type: thisEntry[0],
+            name: thisEntry[1],
+            label: thisEntry[2]
+        })
+    });
+
+    // Table Headers
+    var elHeaders = document.createElement( "tr" );
+    spReportifyData.runner.columns.forEach( function( thisColumn ){
+        var elHeader = document.createElement( "td" );
+        elHeader.innerHTML = thisColumn.label;
+        elHeaders.appendChild( elHeader );
+    });
+    document.getElementById("RunnerReportTableHead").appendChild( elHeaders );
+
+    // Details
+    spReportifyData.runner.data.forEach( function( thisRecord ){
+        var elRow = document.createElement( "tr" );
+        elRow.id = "data_" + thisRecord["ID"];
+
+            spReportifyData.runner.columns.forEach( function( thisColumn ){
+                var elCell = document.createElement( "td" );
+                elCell.id = thisColumn.name + "_" + thisRecord["ID"];
+                elCell.innerHTML = thisRecord[thisColumn.name];
+                elRow.appendChild( elCell );
+            });
+        document.getElementById("RunnerReportTableBody").appendChild( elRow );
+    });
+
+    spr.waitingHide();
+},
+
 
 /**
  * stackAdd
@@ -951,7 +1060,9 @@ builderSave_Failed: function( sender, args ){
         for( const entry of entries ){
             spReportifyData.params[entry[0].toLowerCase()] = entry[1];
         }
-        this.stackRun();
+        spr.logTitle("Parameters from URL");
+        console.table( spReportifyData.params );
+        spr.stackRun();
     },
 
 

@@ -26,14 +26,16 @@
 </head>
 <body style="max-width: 800px; margin: 20px auto; padding: 0 20px;">
 
-<h1 id="reportName"></h1>
-<span id="headUserLogon"></span>
-<table id="reportContainer">
+<h1 id="RunnerReportTitle"></h1>
+<span id="RunnerRuntimeUser"></span>
+
+<table id="RunnerReportTable">
     <caption id="runInfo"></caption>
-    <thead id="reportContainerHead">
+    <thead id="RunnerReportTableHead">
     </thead>
-    <tbody id="reportContainerBody">
+    <tbody id="RunnerReportTableBody">
     </tbody>
 </table>
+
 
 </body>
