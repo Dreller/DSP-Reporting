@@ -761,28 +761,53 @@ builderSave: function(){
     spr.logTitle( "Save the Report ");
 
     // Build Select, Sort and Show Strings
-
+    var QueryArray = [];
         // Select
         var ThisArray = [];
         var Rows = document.querySelectorAll('[id^="Select_"]');
-
+        var ThisQueryArray = [];
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
             // TODO: IF COLUMN IS NOT SET
             var Operator = document.getElementById("Operator_" + thisRowUID).value;
             var Value = document.getElementById("Value_" + thisRowUID).value;
-
+            // String
             ThisArray.push( ([ "R", Column, Operator, Value ]).join( spr.vm ) );
+            // Query
+                var ThisOperator = spr._op.find( x => x.op == Operator );
+                console.log( `Details for Operator "${Operator}"` );
+                console.table( ThisOperator );
+                // Quote Text/Note Values
+                var ThisColumn = spReportifyData.builder.columns.find( x => x.name == Column );
+                console.log( `Details for Column "${Column}"` );
+                console.table( ThisColumn );
+                if( (["Text", "Note"]).includes( ThisColumn.type ) ){
+                    Value = `'${Value}'`;
+                }
+                if( ThisOperator.syntax == "seq" ){
+                    ThisQueryArray.push( `(${Column} ${Operator} ${Value})` );
+                }else{
+                    ThisQueryArray.push( `(${Operator}(${Column},${Value})` );
+                }
         });
         var StringSelect = ThisArray.join( "\n" );
+        var QuerySelect = "";
+            if( ThisQueryArray.length > 0 ){
+                QuerySelect = "$filter=" + ThisQueryArray.join( " and " );
+                QueryArray.push( QuerySelect );
+            }
 
-            spr.logMute( 'SELECT' );
-            console.table( ThisArray );
-            console.log( StringSelect );
+        spr.logMute( 'SELECT' );
+        console.table( ThisArray );
+        console.log( "String for the database" );
+        console.log( StringSelect );
+        console.log( "String for the query" );
+        console.log( QuerySelect );
 
         // Sort
         var ThisArray = [];
+        var ThisQueryArray = [];
         var Rows = document.querySelectorAll('[id^="Sort_"]');
     
         Rows.forEach( function( thisRow ){
@@ -790,35 +815,66 @@ builderSave: function(){
             var Column = document.getElementById("Column_" + thisRowUID).value;
             // TODO: IF COLUMN IS NOT SET
             var Direction = document.getElementById("Direction_" + thisRowUID).value;
-    
+            // String
             ThisArray.push( ([ "R", Column, Direction ]).join( spr.vm ) );
+            // Query
+            ThisQueryArray.push( `${Column} ${Direction}` );
         });
         var StringSort = ThisArray.join( "\n" );
-    
-            spr.logMute( 'SORT' );
-            console.table( ThisArray );
-            console.log( StringSort );
+        var QuerySort = "";
+            if( ThisQueryArray.length > 0 ){
+                QuerySort = "$orderby=" + ThisQueryArray.join( "," );
+                QueryArray.push( QuerySort );
+            }
+
+        spr.logMute( 'SORT' );
+        console.table( ThisArray );
+        console.log( "String for the database" );
+        console.log( StringSort );
+        console.log( "String for the query" );
+        console.log( QuerySort );
 
         // Show
         var ThisArray = [];
+        var ThisQueryArray = [];
         var Rows = document.querySelectorAll('[id^="Show_"]');
-    
+        var ShowContainsIdField = false;
+
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
             // TODO: IF COLUMN IS NOT SET
             var Label = document.getElementById("Label_" + thisRowUID).value;
-    
+            // Detect presence of ID field
+            if( Column == "ID" ){
+                ShowContainsIdField = true;
+            }
+            // String
             ThisArray.push( ([ "R", Column, Label ]).join( spr.vm ) );
+            // Query
+            ThisQueryArray.push( Column );
         });
+        // Add ID if not already there
+        if( ShowContainsIdField == false ){
+            ThisQueryArray.push( "ID" );
+        }
         var StringShow = ThisArray.join( "\n" );
-    
-            spr.logMute( 'SHOW' );
-            console.table( ThisArray );
-            console.log( StringShow );
+        var QueryShow = "";
+        if( ThisQueryArray.length > 0 ){
+            QueryShow = "$select=" + ThisQueryArray.join( "," );
+            QueryArray.push( QueryShow );
+        }
+
+        spr.logMute( 'SHOW' );
+        console.table( ThisArray );
+        console.log( "String for the database" );
+        console.log( StringShow );
+        console.log( "String for the query" );
+        console.log( QueryShow );
 
 
-
+        // Build the Query
+        var Query = QueryArray.join( "&" );
 
 
         // Save to SharePoint Report List
@@ -838,6 +894,7 @@ builderSave: function(){
             this.ReportRecord.set_item('SelectEntries', StringSelect );
             this.ReportRecord.set_item('SortEntries', StringSort );
             this.ReportRecord.set_item('ShowEntries', StringShow );
+            this.ReportRecord.set_item('Query', Query );
 
             // Update Record
             this.ReportRecord.update();
