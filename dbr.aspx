@@ -11,227 +11,249 @@
     <script type="text/javascript" src="../_layouts/15/sp.js"></script>
 
     <script src="bin/dconf.js"></script>
-    <script src="bin/d.js"></script>
-    <script src="bin/djs.js"></script>
-    <link rel="stylesheet" href="bin/pico.css">
-    <style>
-        .icon{
-            font-family: 'Segoe MDL2 Assets';
-            cursor:pointer;
-        }
+    <script src="spReportify.js"></script>
 
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 
-    <script>
-    
-        $(document).ready(function(){
-           // dInit();
-            HelloDreller("build");
-        });
-    </script>
+    <link rel="stylesheet" href="spReportify.css">
+
 </head>
 <body>
-    <main class="container">
+   <!-- Header -->
+   <header>
+        <span>SP Reportify</span>
+        <span>A Reporting Solution for your data in SharePoint!</span>
+   </header>
 
-    <!-- Header -->
-        <div>
-            <hgroup>
-                <h2>Report Builder for SharePoint</h2>
-                <h3 id="headUserLogon"></h3>
-            </hgroup>
-            <footer class="drellerSelectionDone" style="padding: 15px; background: #f9fafb; display:none;" id="headSelectionDone"></footer>
-            <hr class="drellerSelectionDone" style="display:none;">
-        </div>
-
-    <!-- One Moment Please -->
-        <div id="waiting" style="position: fixed;width: 100%; top: 15%; height: 350px; left: 0; justify-content: center; display: flex;">
-            <article id="waitingInfo" aria-busy="true">
-                One moment please...
-            </article>
-        </div>
-
-    <!-- Selector: Datasource (list) -->
-        <div id="SelectDatasource">
-            <label for="lstDatasource">Datasource:</label>
-            <select id="lstDatasource" onchange="d_GetReports();">
-                <option value="">Choose an option...</option>
-            </select>
-        </div>
-
-    <!-- Selector: Select Existing Report or create new one -->
-        <div id="SelectReport">
-            <div style="width:100%;text-align:right;">
-                <a id="tabExisting" href="#" style="display:none;" onclick="$('#SelectReportExisting').show();$('#SelectReportCreate').hide();$('#tabExisting').hide();$('#tabCreate').show();dreller.runtime.action = 'edit';">
-                    Edit an existing report...
-                </a>
-                <a id="tabCreate" href="#" style="" onclick="$('#SelectReportExisting').hide();$('#SelectReportCreate').show();$('#tabExisting').show();$('#tabCreate').hide();dreller.runtime.action = 'create';">
-                    Create a new report...
-                </a>
-            </div>
-            <div id="SelectReportExisting" style="padding-top: 2rem;">
-                <label for="lstReport">
-                    Report to edit:
-                </label>
-                <select id="lstReport">
-                    <option value="">Choose an option...</option>
-                </select>
-            </div>
-            <div id="SelectReportCreate" style="display:none;padding-top: 2rem;">
-                <label for="txtNewReportName">
-                    Give your report a name:
-                </label>
-                <input type="text" id="txtNewReportName" />
-            </div>
-            <div style="width: 100%; text-align:right;">
-                <a href="#" role="button" class="primary" onclick="d_BuildEditor()">Ok</a>
-            </div>
-        </div>
-
-
-    <!-- REPORT BUILDER -->
-    <section id="ReportBuilderSection" style="display:none;">
-        <div style="display: inline-block;padding: 12px 0px;">
-            <a href="#!" onclick="$('details').prop('open', true);">Expand all</a>&nbsp;|&nbsp;
-            <a href="#!" onclick="$('details').prop('open', false);">Collapse all</a>&nbsp;|&nbsp;
-            <a href="#!" onclick="toggleModal(event)" data-target="data-dict">Dictionary</a>
-        </div>
-
-        <dialog id="data-dict">
-            <article>
-                <header>
-                    <a href="#close" aria-label="Close" class="close" data-target="data-dict" onclick="toggleModal(event)"></a>
-                    Data Dictionary
-                </header>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Column</th>
-                            <th>Type</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataDictBody">
-
-                    </tbody>
-                </table>
-            </article>
-          </dialog>
-
-        <!-- Select -->
-            <details open>
-                <summary role="button" class="secondary">
-                    Select
-                </summary>
-                <p>
-                    <table id="selectTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Column
-                                </th>
-                                <th>
-                                    Operator
-                                </th>
-                                <th>
-                                    Value
-                                </th>
-                                <th>
-                                    Options
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="selectTBody"></tbody>
-                    </table>
-                </p>
-                <div style="display: inline-block;padding: 12px 0px;">
-                    <a href="#!" onclick="d_BuilderAddItem({type:'select'})">Add row</a>
-                </div>
-            </details>
-
-        <!-- Sort -->
-            <details open>
-                <summary role="button" class="secondary">
-                    Sort
-                </summary>
-                <p>
-                    <table id="sortTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Column
-                                </th>
-                                <th>
-                                    Direction
-                                </th>
-                                <th>
-                                    Options
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="sortTBody"></tbody>
-                    </table>
-                </p>
-                <div style="display: inline-block;padding: 12px 0px;">
-                    <a href="#!" onclick="d_BuilderAddItem({type:'sort'})">Add row</a>
-                </div>
-            </details>
-
-        <!-- Show -->
-            <details open>
-                <summary role="button" class="secondary">
-                    Show
-                </summary>
-                <p>
-                    <table id="showTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Column
-                                </th>
-                                <th>
-                                    Column Title
-                                </th>
-                                <th>
-                                    Options
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="showTBody"></tbody>
-                    </table>
-                </p>
-                <div style="display: inline-block;padding: 12px 0px;">
-                    <a href="#!" onclick="d_BuilderAddItem({type:'show'})">Add row</a>
-                </div>
-            </details>
-
-        <!-- Report options -->
-            <details>
-                <summary role="button" class="contrast">
-                    Report Options
-                </summary>
-                <p>
-                    Additional options goes here.
-                </p>
-            </details>
-
-        <!-- Report URL Parameters -->
-            <details>
-                <summary role="button" class="contrast">
-                    URL Parameters
-                </summary>
-                <p>
-                    Mappings goes here.  It will be a feature to use URL Parameters in <em>Select</em>.
-                </p>
-            </details>
-
-
-
-        <!-- Save Button -->
-        <p>
-            <a href="#!" role="button" class="contrast" onclick="d_BuilderSaveReport();">Save report</a>
-        </p>
-
+<!-- First form: Select Datasource + Report -->
+<section id="BuilderIdentifyReport">
+<!-- Select the Datasource -->
+    <section id="BuilderFormSectionDatasource">
+        <label for="BuilderFormControlDatasource">
+            Select a Datasource:
+        </label>
+        <select id="BuilderFormControlDatasource">
+            
+        </select>
     </section>
-</main>
+
+
+<!-- Choose the Action to do: Edit or Create a Report -->
+    <section id="BuilderFormSectionAction" style="display:none;">
+        <div class="BuilderFormWrapperAction">
+            <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceEdit" onclick="spReportify.builderToggleMode(0);" checked>
+            <input type="radio" name="BuilderFormControlAction" id="BuilderFormControlActionChoiceCreate" onclick="spReportify.builderToggleMode(1);">
+            <label for="BuilderFormControlActionChoiceEdit" class="radioOption choiceEdit">
+                <div class="BuilderFormControlActionDot"></div>
+                <span>Edit a Report</span>
+            </label>
+            <label for="BuilderFormControlActionChoiceCreate" class="radioOption choiceCreate">
+                <div class="BuilderFormControlActionDot"></div>
+                <span>Create a Report</span>
+            </label>
+        </div>
+    </section>
+
+<!-- Select the Report to Edit -->
+    <section id="BuilderFormSectionReportPicker" style="display:none;">
+        <label for="BuilderFormControlReportPicker">
+            Choose the report to edit:
+        </label>
+        <select id="BuilderFormControlReportPicker">
+        </select>
+    </section>
+
+<!-- Create a new Report -->
+    <section id="BuilderFormSectionReportNaming" style="display:none;">
+        <label for="BuilderFormControlReportNaming">
+            Give a name for your new report:
+        </label>
+        <input type="text" id="BuilderFormControlReportNaming" autocomplete="off" onkeyup="spReportify.builderValidateReportName();" />
+        <span id="BuilderFormAlertReportNaming_AlreadyUsed" style="display:none;">
+            This Report Name is already used for this Datasource!  Please use another name.
+        </span>
+        
+    </section>
+<!-- Continue button (Load/Create Report) -->
+    <section id="BuilderFormSectionLoadCreateReport" style="display:none;">
+        <a href="#!" id="BuilderFormControlButtonLoadCreate" role="button" class="button">Continue</a>
+    </section>
+
+</section> <!-- End of BuilderIdentifyReport-->
+
+
+<!-- Read-Only View of the Datasource and Report Selection -->
+<section id="BuilderReportIdentity" style="display: none;">
+    <table>
+        <thead>
+            <tr>
+                <th>
+                    Datasource
+                </th>
+                <th>
+                    Report
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="BuilderReportIdentityDatasource">
+
+                </td>
+                <td id="BuilderReportIdentityReportName">
+                    
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- Builder Form -->
+    <section id="BuilderForm" style="display:none;">
+
+    <!-- Toolbar -->
+        <section id="BuilderToolbar" class="toolbar">
+            <ul class="toolbar">
+            <li data-modal="BuilderDataDictionary">Dictionary</li>
+            <li onclick="spReportify.builderSave();">Save</li>
+            <li onclick="abc">Save & Run</li>
+            </ul>
+        </section>
+
+    <!-- Select -->
+        <section id="BuilderFormSelect">
+            <h3>Selection</h3>
+            <table id="BuilderFormSelectTable">
+                <thead id="BuilderFormSelectTableHead">
+                    <tr>
+                        <th>Column</th>
+                        <th>Operator</th>
+                        <th>Value</th>
+                        <th>Options</th>
+                    </tr>
+                </thead>
+                <tbody id="BuilderFormSelectTableBody">
+
+                </tbody>
+            </table>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button" onclick="spReportify.builderDrawRow(1);">Add Row</a>
+        </section>
+
+    <!-- Sort -->
+        <section id="BuilderFormSort">
+            <h3>Sort</h3>
+            <table id="BuilderFormSortTable">
+                <thead id="BuilderFormSortTableHead">
+                    <tr>
+                        <th>Column</th>
+                        <th>Direction</th>
+                        <th>Options</th>
+                    </tr>
+                </thead>
+                <tbody id="BuilderFormSortTableBody">
+                    
+                </tbody>
+            </table>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button" onclick="spReportify.builderDrawRow(2);">Add Row</a>
+        </section>
+
+    <!-- Show -->
+        <section id="BuilderFormShow">
+            <h3>Show</h3>
+            <table id="BuilderFormShowTable">
+                <thead id="BuilderFormShowTableHead">
+                    <tr>
+                        <th>Column</th>
+                        <th>Header</th>
+                        <th>Options</th>
+                    </tr>
+                </thead>
+                <tbody id="BuilderFormShowTableBody">
+                    
+                </tbody>
+            </table>
+            <a href="#!" id="BuilderFormSelectAddRow" role="button" class="button" onclick="spReportify.builderDrawRow(3);">Add Row</a>
+        </section>
+
+    <!-- Options -->
+        <section id="BuilderFormOptions">
+            <h3>Other Settings and Options</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            Option
+                        </th>
+                        <th>
+                            Description
+                        </th>
+                        <th>
+                            Value
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Report Description -->
+                    <tr>
+                        <td>
+                            Report Description
+                        </td>
+                        <td>
+                            Description displayed when a user is running the report.  It can be used to describe what the user is looking at.
+                        </td>
+                        <td>
+                            <textarea id="BuilderFormOptionDescription">
+
+                            </textarea>
+                        </td>
+                    </tr>
+                    <!-- .. -->
+                </tbody>
+            </table>
+            
+        </section>
+    
+
+
+</section>  <!-- Builder Form -->
+
+
+
+<!-- Data Dictionary -->
+<div id="BuilderDataDictionary" class="modal">
+    <div class="modal-bg modal-exit"></div>
+    <div class="modal-container">
+        <div style="width: 100%;">
+            <h2 style="float:left;">Data Dictionary</h2>
+            <button style="float:right;cursor:pointer;" class="modal-close modal-exit">X</button>
+        </div>
+        <table id="BuilderDictionaryTable">
+            <thead id="BuilderDictionaryTableHead">
+                <tr>
+                    <th>
+                        Column Title
+                    </th>
+                    <th>
+                        Static Name
+                    </th>
+                    <th>
+                        Data Type
+                    </th>
+                    <th>
+                        Description
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="BuilderDictionaryTableBody">
+
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+
 
 </body>

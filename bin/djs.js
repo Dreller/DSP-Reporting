@@ -38,7 +38,7 @@ function HelloDreller(runtype){
             action: ""
         }
     }
-
+/*
 // Running a Report
 if( runtype == "run" ){
     d_StackAdd( d_ParseURL );
@@ -58,12 +58,12 @@ if( runtype == "build" ){
     d_StackAdd( d_LoadLists );
     d_StackAdd( d_InsertLists );
 
-    d_StackAdd( d_Waiting, false );
+    
 
 }
+*/
 
-
-
+d_StackAdd( d_Waiting, false );
 // Execute the queue sequentially.
     d_StackRun();
 }
@@ -289,7 +289,21 @@ function d_LoadColumn(args){
  * Load Lists for the current Site.
  */
 function d_LoadLists(){
-    d_CallSP("lists?$select=Id,Title,Hidden,BaseType,ItemCount,Fields&$expand=Fields", {}, function(response){
+    // Configuration File control if we can use Lists and/or Libraries - Use of $filter
+    if( _ALLOW_CUST_LIBRARY && _ALLOW_SYST_LIBRARY && _ALLOW_CUST_LISTS ){
+        var listFilter = "";
+    }else{
+        var aBaseTypes = [];
+        if( _ALLOW_CUST_LIBRARY || _ALLOW_SYST_LIBRARY ){
+            aBaseTypes.push( "BaseType eq 1" );
+        }
+        if( _ALLOW_CUST_LISTS ){
+            aBaseTypes.push( "BaseType eq 0" );
+        }
+        var listFilter = "&$filter=" + aBaseTypes.join(" and ");
+    }
+
+    d_CallSP("lists?$select=Id,Title,Hidden,BaseType,ItemCount,Fields&$expand=Fields" + listFilter, {}, function(response){
         dreller.site["lists"] = [];
         response.d.results.forEach( function( thisEntry, thisIndex) {
             // Establish conditions if we should keep the list or not.
@@ -354,9 +368,29 @@ function d_BuildEditor(){
     var xList = (dreller.site.lists).filter( x => x.Id == $("#lstDatasource").val() )[0];
     var xReport = (dreller.site.reports).filter( y => y.Id == $("#lstReport").val())[0];
 
+    // Filter the list of Columns if we are allowed to use System Fields or not
+    if( _ALLOW_SYST_FIELD ){
+        var xColumns = xList.Fields.results;
+    }else{
+        var xColumns = (xList.Fields.results).filter( x => x.Title == "ID" || ( x.Hidden == false && x.ReadOnlyField == false && x.Title != "Attachments" && x.Title != "Content Type" )  );
+    }
+
+    // Sort Columns
+    xColumns.sort((a, b) => {
+        const titleA = a.Title.toLowerCase();
+        const titleB = b.Title.toLowerCase();
+        if( titleA < titleB ){
+            return -1;
+        }
+        if( titleA > titleB ){
+            return 1;
+        }
+        return 0;
+    } );
+
     dreller["editor"] = {
         list: xList,
-        columns: xList.Fields.results,
+        columns: xColumns,
         report: xReport,
         reportName: (dreller.runtime.action=="create" ? $("#txtNewReportName").val():xReport.Title)
     }

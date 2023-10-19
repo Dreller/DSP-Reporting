@@ -1,0 +1,408 @@
+:root{
+  --main-color: #0F4C81;
+}
+
+*{
+    font-family: Roboto, sans-serif;
+}
+
+input[type="text"], textarea{
+    width: 90%;
+    background-color: #f5f5f5;
+    border: thin solid #c3c3c3;
+    border-radius: 3px;
+    display: inline-block;
+    font: inherit;
+    line-height: 1.2;
+    padding: 0.5em 3.5em 0.5em 1em;
+    margin: 0;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+select{
+    width: 90%;
+    background-color: #f5f5f5;
+    border: thin solid #c3c3c3;
+    border-radius: 3px;
+    display: inline-block;
+    font: inherit;
+    line-height: 1.2;
+    padding: 0.5em 3.5em 0.5em 1em;
+    margin: 0;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, gray 50%),linear-gradient(135deg, gray 50%, transparent 50%), linear-gradient(to right, #ccc, #ccc);
+    background-position: calc( 100% - 20px ) calc( 1em + 2px ), calc( 100% - 15px ) calc( 1em + 2px ), calc( 100% - 2.5em ) 0.5em;
+    background-size: 5px 5px, 5px 5px, 1px 1.5em;
+    background-repeat: no-repeat;
+}
+select:focus{
+    background-image:
+    linear-gradient(45deg, #0e0f19 50%, transparent 50%),
+    linear-gradient(135deg, transparent 50%, #0e0f19 50%),
+    linear-gradient(to right, #ccc, #ccc);
+  background-position:
+    calc(100% - 15px) 1em,
+    calc(100% - 20px) 1em,
+    calc(100% - 2.5em) 0.5em;
+  background-size:
+    5px 5px,
+    5px 5px,
+    1px 1.5em;
+  background-repeat: no-repeat;
+  border-color: #0e0f19;
+  outline:0;
+}
+select:-moz-focusring{
+    color: transparent;
+    text-shadow:0 0 0 #000;
+}
+
+.link{
+    color: #0e0f19;
+    text-decoration: none ;
+    cursor:pointer;
+}
+
+.button {
+  background-color: #fff;
+  border: 1px solid #d5d9d9;
+  border-radius: 8px;
+  box-shadow: rgba(213, 217, 217, .5) 0 2px 5px 0;
+  box-sizing: border-box;
+  color: #0e0f19;
+  cursor: pointer;
+  display: inline-block;
+  font-family: "Amazon Ember",sans-serif;
+  font-size: 13px;
+  line-height: 29px;
+  padding: 0 10px 0 11px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+  width: 100px;
+}
+
+.button:hover {
+  background-color: #f7fafa;
+}
+
+.button:focus {
+  border-color: var(--main-color);
+  box-shadow: rgba(213, 217, 217, .5) 0 2px 5px 0;
+  outline: 0;
+}
+
+header{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    vertical-align: bottom;
+    border-bottom: solid 1px gray;
+    height: 50px;
+    margin-bottom: 30px;
+}
+header span:first-child{
+    font-weight: 600;
+    font-size: 28px;
+}
+header span:last-child{
+    height: 50px;
+    vertical-align: bottom;
+}
+
+section{
+    width: 100%;
+    margin-top: 20px;
+}
+
+.BuilderFormWrapperAction{
+    display: inline-flex;
+    height: 35px;
+    width: 400px;
+    align-items: center;
+    justify-content: space-evenly;
+}
+.BuilderFormWrapperAction .radioOption{
+    background: #fff;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    margin: 0 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 0 10px;
+    border: 2px solid lightgrey;
+    transition: all 0.3s ease;  
+}
+.BuilderFormWrapperAction .radioOption .BuilderFormControlActionDot{
+    height: 20px;
+    width: 20px;
+    background: #d9d9d9;
+    border-radius: 50%;
+    position: relative;
+}
+.BuilderFormWrapperAction .radioOption .BuilderFormControlActionDot::before{
+    position: absolute;
+    content: "";
+    top: 4px;
+    left: 4px;
+    width: 12px;
+    height: 12px;
+    background: var(--main-color);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(1.5);
+    transition: all 0.3s ease;
+}
+input[type="radio"]{
+    display: none;
+  }
+  #BuilderFormControlActionChoiceEdit:checked:checked ~ .choiceEdit,
+  #BuilderFormControlActionChoiceCreate:checked:checked ~ .choiceCreate{
+    border-color: var(--main-color);
+    background: var(--main-color);
+  }
+  #BuilderFormControlActionChoiceEdit:checked:checked ~ .choiceEdit .dot,
+  #BuilderFormControlActionChoiceCreate:checked:checked ~ .choiceCreate .dot{
+    background: #fff;
+  }
+  #BuilderFormControlActionChoiceEdit:checked:checked ~ .choiceEdit .BuilderFormControlActionDot::before,
+  #BuilderFormControlActionChoiceCreate:checked:checked ~ .choiceCreate .BuilderFormControlActionDot::before{
+    opacity: 1;
+    transform: scale(1);
+  }
+  .BuilderFormWrapperAction .radioOption span{
+    font-size: 16px;
+    color: #808080;
+  }
+  #BuilderFormControlActionChoiceEdit:checked:checked ~ .choiceEdit span,
+  #BuilderFormControlActionChoiceCreate:checked:checked ~ .choiceCreate span{
+    color: #fff;
+  }
+
+ .TextBoxError{
+    border: solid 2px #df1616 !important;
+    background-color: #fac8c8 !important;
+  }
+
+
+  table{
+    width: 100%;
+    table-layout: fixed;
+    border-spacing: 0px;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    margin-bottom: 20px;
+  }
+  td {
+    border-left: solid 1px #999da3;
+    border-bottom: solid 1px #999da3;
+    padding: 5px 10px;
+    vertical-align: top;
+  }
+  tr > td:last-child{
+    border-left: solid 1px #999da3;
+    border-bottom: solid 1px #999da3;
+    border-right: solid 1px #999da3;
+  }
+  th{
+    border-left: solid 1px #999da3;
+    border-bottom: solid 1px #999da3;
+    border-top: solid 1px #999da3;
+  }
+  thead > tr, tr:hover{
+    background-color: #ebebeb;
+  }
+  thead > tr > th:first-child {
+    border-top-left-radius: 5px;
+  }
+  thead > tr > th:last-child {
+    border-top-right-radius: 5px;
+    border-right: solid 1px #999da3;
+  } 
+
+.tooltip{
+  position: relative;
+  display: inline-block;
+}
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+.pointer{
+  cursor: pointer;
+}
+
+ul.toolbar{
+  list-style: none;
+  list-style-type:none;
+  width: 100%;
+  border: solid 1px #68768A;
+  padding: 1rem 2rem;
+  margin-top: 1rem;
+  border-radius: 10px;
+  background-color: #68768A;
+  color: #fff;
+  display: inline-block;
+  text-align:center;
+}
+ul.toolbar > li{
+    display: inline-block;
+    padding: 0 0.5rem;
+    min-width: 7rem;
+    cursor: pointer;
+    text-align:center;
+}
+ul.toolbar > li:not(:last-child){
+    border-right: 1px solid #c3c3c3;
+}
+section.toolbar{
+  width: 70%;
+  margin: auto;
+}
+
+div#BuilderDataDictionary{
+  position: fixed;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  top: 3em;
+  left: 3em;
+  right: 3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  border: 1px solid #4d4d4d;
+  padding: 1em;
+  vertical-align:top;
+  box-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.5), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  &.open{
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
+  }
+  &-container{
+    border-radius:5px;
+    background:#fff;
+    position: relative;
+    padding: 20px;
+  }
+  &-close{
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    outline: none;
+    appearance: none;
+    color: red;
+    background: none;
+    border: 0px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+}
+
+div.pleaseWait{
+  position: fixed;
+  width: 70%;
+  height: 7em;
+  left: 15%;
+  right: 15%;
+  top: 15%;
+  padding-top: 2em;
+  padding-bottom: 2em;
+  padding-left: 10px;
+  justify-content: center;
+  text-align: center;
+  vertical-align: middle;
+  display: block;
+  background-color: #d5d9d9;
+  border: 1px solid #4d4d4d;
+  box-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.5), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  border-radius:5px;
+}
+div.pleaseWait > div{
+  display: flex;
+  padding-left: 15px;
+}
+#wipTell{
+  height: 3em;
+  padding-left:15px;
+  display: table-cell;
+  font-size: 18pt;
+  vertical-align: bottom;
+  text-align: start;
+  align-self: flex-end;
+}
+
+svg#wipSpinner {
+  animation: 2s linear infinite svg-animation;
+  max-width: 100px;
+}
+
+@keyframes svg-animation {
+  0% {
+    transform: rotateZ(0deg);
+  }
+  100% {
+    transform: rotateZ(360deg)
+  }
+}
+
+circle#wipSpinnerAnime {
+  animation: 1.4s ease-in-out infinite both circle-animation;
+  display: block;
+  fill: transparent;
+  stroke: var(--main-color);
+  stroke-linecap: round;
+  stroke-dasharray: 283;
+  stroke-dashoffset: 280;
+  stroke-width: 10px;
+  transform-origin: 50% 50%;
+}
+
+@keyframes circle-animation {
+  0%,
+  25% {
+    stroke-dashoffset: 280;
+    transform: rotate(0);
+  }
+  
+  50%,
+  75% {
+    stroke-dashoffset: 75;
+    transform: rotate(45deg);
+  }
+  
+  100% {
+    stroke-dashoffset: 280;
+    transform: rotate(360deg);
+  }
+}
