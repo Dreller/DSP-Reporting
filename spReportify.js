@@ -820,27 +820,28 @@ builderSave: function(){
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
-            // TODO: IF COLUMN IS NOT SET
-            var Operator = document.getElementById("Operator_" + thisRowUID).value;
-            var Value = document.getElementById("Value_" + thisRowUID).value;
-            // String
-            ThisArray.push( ([ "R", Column, Operator, Value ]).join( spr.vm ) );
-            // Query
-                var ThisOperator = spr._op.find( x => x.op == Operator );
-                console.log( `Details for Operator "${Operator}"` );
-                console.table( ThisOperator );
-                // Quote Text/Note Values
-                var ThisColumn = spReportifyData.builder.columns.find( x => x.name == Column );
-                console.log( `Details for Column "${Column}"` );
-                console.table( ThisColumn );
-                if( (["Text", "Note"]).includes( ThisColumn.type ) ){
-                    Value = `'${Value}'`;
-                }
-                if( ThisOperator.syntax == "seq" ){
-                    ThisQueryArray.push( `(${Column} ${Operator} ${Value})` );
-                }else{
-                    ThisQueryArray.push( `(${Operator}(${Column},${Value})` );
-                }
+            if( Column != "" ){
+                var Operator = document.getElementById("Operator_" + thisRowUID).value;
+                var Value = document.getElementById("Value_" + thisRowUID).value;
+                // String
+                ThisArray.push( ([ "R", Column, Operator, Value ]).join( spr.vm ) );
+                // Query
+                    var ThisOperator = spr._op.find( x => x.op == Operator );
+                    console.log( `Details for Operator "${Operator}"` );
+                    console.table( ThisOperator );
+                    // Quote Text/Note Values
+                    var ThisColumn = spReportifyData.builder.columns.find( x => x.name == Column );
+                    console.log( `Details for Column "${Column}"` );
+                    console.table( ThisColumn );
+                    if( (["Text", "Note"]).includes( ThisColumn.type ) ){
+                        Value = `'${Value}'`;
+                    }
+                    if( ThisOperator.syntax == "seq" ){
+                        ThisQueryArray.push( `(${Column} ${Operator} ${Value})` );
+                    }else{
+                        ThisQueryArray.push( `(${Operator}(${Column},${Value})` );
+                    }
+            }
         });
         var StringSelect = ThisArray.join( "\n" );
         var QuerySelect = "";
@@ -864,12 +865,13 @@ builderSave: function(){
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
-            // TODO: IF COLUMN IS NOT SET
-            var Direction = document.getElementById("Direction_" + thisRowUID).value;
-            // String
-            ThisArray.push( ([ "R", Column, Direction ]).join( spr.vm ) );
-            // Query
-            ThisQueryArray.push( `${Column} ${Direction}` );
+            if( Column != "" ){
+                var Direction = document.getElementById("Direction_" + thisRowUID).value;
+                // String
+                ThisArray.push( ([ "R", Column, Direction ]).join( spr.vm ) );
+                // Query
+                ThisQueryArray.push( `${Column} ${Direction}` );
+            }
         });
         var StringSort = ThisArray.join( "\n" );
         var QuerySort = "";
@@ -894,16 +896,17 @@ builderSave: function(){
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
-            // TODO: IF COLUMN IS NOT SET
-            var Label = document.getElementById("Label_" + thisRowUID).value;
-            // Detect presence of ID field
-            if( Column == "ID" ){
-                ShowContainsIdField = true;
+            if( Column != "" ){
+                var Label = document.getElementById("Label_" + thisRowUID).value;
+                // Detect presence of ID field
+                if( Column == "ID" ){
+                    ShowContainsIdField = true;
+                }
+                // String
+                ThisArray.push( ([ "R", Column, Label ]).join( spr.vm ) );
+                // Query
+                ThisQueryArray.push( Column );
             }
-            // String
-            ThisArray.push( ([ "R", Column, Label ]).join( spr.vm ) );
-            // Query
-            ThisQueryArray.push( Column );
         });
         // Add ID if not already there
         if( ShowContainsIdField == false ){
