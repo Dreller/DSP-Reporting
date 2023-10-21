@@ -895,7 +895,7 @@ builderSave: function(){
                 this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).getItemById( spReportifyData.builder.report.id );
             }else{
                 this.NewReportRecord = new SP.ListItemCreationInformation();
-                this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).addItem( NewReportRecord );
+                this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).addItem( this.NewReportRecord );
             }
 
             // Set Values
