@@ -116,6 +116,7 @@
     <!-- Toolbar -->
         <section id="BuilderToolbar" class="toolbar">
             <ul class="toolbar">
+            <li onclick="spReportify.builderCloseReport();">Close</li>
             <li data-modal="BuilderDataDictionary">Dictionary</li>
             <li onclick="spReportify.builderSave();">Save</li>
             <li onclick="abc">Save & Run</li>

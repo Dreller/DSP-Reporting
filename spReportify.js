@@ -980,6 +980,39 @@ builderSave_Success: function(){
     alert( 'Report Saved !');
 },
 
+builderCloseReport: function(){
+    // Reset spReportifyData
+        spReportifyData.builder = {
+            lists: spReportifyData.builder.lists
+        }
+    // Remove Lines in Tables
+        document.getElementById("BuilderFormSelectTableBody").innerHTML = "";
+        document.getElementById("BuilderFormSortTableBody").innerHTML = "";
+        document.getElementById("BuilderFormShowTableBody").innerHTML = "";
+        document.getElementById("BuilderDictionaryTableBody").innerHTML = "";
+
+    // Remove Report References
+        document.getElementById("BuilderReportIdentityDatasource").innerHTML = "";
+        document.getElementById("BuilderReportIdentityReportName").innerHTML = "";
+
+    // Remove Report Options
+        document.getElementById("BuilderFormOptionDescription").value = "";
+
+    // Reset Builder Form Visibility
+        spr.show("BuilderIdentifyReport");
+        spr.show("BuilderFormSectionDatasource");
+        spr.hide("BuilderFormSectionAction");
+        spr.hide("BuilderFormSectionReportPicker");
+        spr.hide("BuilderFormSectionReportNaming");
+        spr.hide("BuilderFormSectionLoadCreateReport");
+        spr.hide("BuilderForm");
+        spr.hide("BuilderReportIdentity");
+
+    // Reset Initial Form
+        document.getElementById("BuilderFormControlDatasource").value = null;
+
+},
+
 runnerGetReport: function( Identifier ){
     spr.waitingShow( "Requesting the report definition..." );
     switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
@@ -1014,8 +1047,11 @@ runnerParseReport: function(){
 
 runnerGetData: function(){
     spr.waitingShow( "Reading data..." );
-
-
+    spReportifyData.runner["nextPage"] = {
+        hasNextPage: false,
+        previous: "",
+        next: ""
+    }
     var AjaxOptions = {
         url: `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}` ,
         method: "GET",
@@ -1029,6 +1065,11 @@ runnerGetData: function(){
     // Send Request to Server
     $.ajax( AjaxOptions )
     .done( function ( data ){
+        spReportifyData.runner.nextPage.previous = spReportifyData.runner.nextPage.next;
+        if( (data.d).hasOwnProperty('__next') ){
+            spReportifyData.runner.nextPage.next = data.d.__next;
+            spReportifyData.runner.nextPage.hasNextPage = true;
+        }
         spReportifyData.runner["data"] = data.d.results;
         spr.runnerDrawReport();
         
