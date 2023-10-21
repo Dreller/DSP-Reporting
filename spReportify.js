@@ -322,12 +322,14 @@ builderGetColumns: function(){
                 var enumFields = _api.getEnumerator();
                 while( enumFields.moveNext() ){
                     var thisField = enumFields.get_current();
-
+                    console.log( thisField );
                     var thisFieldTitle = thisField.get_title();
                     var thisFieldStatic = thisField.get_staticName();
                     var thisFieldSealed = thisField.get_sealed();
                     var thisFieldHidden = thisField.get_hidden();
                     var thisFieldFromBase = thisField.get_fromBaseType();
+                    var thisFieldSortable = thisField.get_sortable();
+                    var thisFieldXML = thisField.get_schemaXml();
 
                     var KeepThisField = true;
 
@@ -351,7 +353,10 @@ builderGetColumns: function(){
                             name: thisFieldStatic,
                             title: thisFieldTitle,
                             type: thisField.get_typeAsString(),
-                            description: thisField.get_description()
+                            description: thisField.get_description(),
+                            sortable: thisFieldSortable,
+                            indexed: thisField.get_indexed(),
+                            schema: thisFieldXML
                         });
                     }
 
@@ -635,10 +640,14 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
         elSelect.id = "Column_" + RowUID;
         // Insert Columns in the Select
             spReportifyData.builder.columns.forEach( function( thisColumn ){
-                var elOption = document.createElement("option");
-                elOption.value = thisColumn.name;
-                elOption.text = thisColumn.title;
-                elSelect.appendChild( elOption );
+                // Skip "sortable = false" for SectionNumber = 2
+                // Columns needs to be sortable to be used in this section.
+                    if( SectionNumber != 2 ){
+                        var elOption = document.createElement("option");
+                        elOption.value = thisColumn.name;
+                        elOption.text = thisColumn.title;
+                        elSelect.appendChild( elOption );
+                    }
             });
         // Set the Value of the Select
         elSelect.value = RowColumn;
