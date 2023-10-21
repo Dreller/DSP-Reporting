@@ -672,7 +672,7 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
             spReportifyData.builder.columns.forEach( function( thisColumn ){
                 // Skip "sortable = false" for SectionNumber = 2
                 // Columns needs to be sortable to be used in this section.
-                    if( SectionNumber != 2 ){
+                    if( SectionNumber != 2 || thisColumn.sortable == true ){
                         var elOption = document.createElement("option");
                         elOption.value = thisColumn.name;
                         elOption.text = thisColumn.title;
