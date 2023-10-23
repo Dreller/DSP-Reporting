@@ -124,6 +124,11 @@ start: function(){
         
         // Commends for Report Runner
             if( spReportifyData.environ.mode == "runner" ){
+                spReportifyData.runner["nextPage"] = {
+                    hasNextPage: false,
+                    previous: "",
+                    next: ""
+                }
                 this.waitingShow( "Starting Report Runner..." );
                 this.stackAdd( this.getParams );
                 this.stackAdd( this.runnerGetReport );
@@ -1015,6 +1020,7 @@ builderCloseReport: function(){
 
 runnerGetReport: function( Identifier ){
     spr.waitingShow( "Requesting the report definition..." );
+    spReportifyData.runner["data"] = [];
     switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
         case "title":
             spReportifyData.runner["api"] = spReportifyData.sp.web.get_lists().getByTitle( spReportifyData.config.reportListRef ).getItemById( spReportifyData.params.rpt );
@@ -1042,18 +1048,26 @@ runnerParseReport: function(){
     spr.logTrace("Report Definition");
     spr.logTable( spReportifyData.runner.report );
 
-    spr.runnerGetData();
+    spr.runnerGetFirstBatch();
+},
+
+runnerGetFirstBatch: function(){
+    spr.stackAdd( spr.runnerGetData );
+    spr.stackAdd( spr.runnerDrawReport );
+    spr.stackAdd( spr.runnerInsertData );
+    spr.stackRun();
+},
+runnerGetNextBatch: function(){
+    spr.stackAdd( spr.runnerGetData );
+    spr.stackAdd( spr.runnerInsertData);
+    spr.stackRun();
 },
 
 runnerGetData: function(){
-    spr.waitingShow( "Reading data..." );
-    spReportifyData.runner["nextPage"] = {
-        hasNextPage: false,
-        previous: "",
-        next: ""
-    }
+    spr.waitingShow( "Downloading data..." );
+    spReportifyData.runner["dataBatch"] = [];
     var AjaxOptions = {
-        url: `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}` ,
+        url: ( spReportifyData.runner.nextPage.hasNextPage ? spReportifyData.runner.nextPage.next : `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}` ) ,
         method: "GET",
         async: false,
         headers: {
@@ -1070,16 +1084,16 @@ runnerGetData: function(){
             spReportifyData.runner.nextPage.next = data.d.__next;
             spReportifyData.runner.nextPage.hasNextPage = true;
         }
-        spReportifyData.runner["data"] = data.d.results;
-        spr.runnerDrawReport();
+        spReportifyData.runner.data.push( data.d.results );
+        spReportifyData.runner["dataBatch"] = data.d.results;
         
+        spr.stackRun();
     })
     .fail( function( jqXHR, textStatus, error ){
         spr.logError("Error Getting Report.");
         spr.logError( textStatus );
         spr.logError( error );
     })
-
 },
 
 
@@ -1107,12 +1121,16 @@ runnerDrawReport: function(){
         elHeaders.appendChild( elHeader );
     });
     document.getElementById("RunnerReportTableHead").appendChild( elHeaders );
+    spr.waitingHide();
 
+    spr.stackRun();
+},
+
+runnerInsertData: function(){
     // Details
-    spReportifyData.runner.data.forEach( function( thisRecord ){
+    spReportifyData.runner.dataBatch.forEach( function( thisRecord ){
         var elRow = document.createElement( "tr" );
         elRow.id = "data_" + thisRecord["ID"];
-
             spReportifyData.runner.columns.forEach( function( thisColumn ){
                 var elCell = document.createElement( "td" );
                 elCell.id = thisColumn.name + "_" + thisRecord["ID"];
@@ -1121,8 +1139,13 @@ runnerDrawReport: function(){
             });
         document.getElementById("RunnerReportTableBody").appendChild( elRow );
     });
-
-    spr.waitingHide();
+    if( spReportifyData.runner.nextPage.hasNextPage ){
+        spr.show("RunnerFetchNextPageButton");
+    }else{
+        spr.hide("RunnerFetchNextPageButton");
+        spr.show("RunnerFetchNextPageFinished");
+    }
+    spr.stackRun();
 },
 
 

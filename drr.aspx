@@ -37,5 +37,9 @@
     </tbody>
 </table>
 
+<section id="RunnerFetchNextPage">
+    <a href="#!" id="RunnerFetchNextPageButton" role="button" class="button" onclick="spReportify.runnerGetNextBatch();">Load more...</a>
+    <span id="RunnerFetchNextPageFinished" style="display:none;">(All data loaded)</span>
+</section>
 
 </body>
