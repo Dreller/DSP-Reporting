@@ -19,14 +19,17 @@
 
 const spReportify = {
 vm: String.fromCharCode(253),
-// List of Operators
+// List of Operators - Syntax can be: 
+//   seq:  Operator is sequential, eg:  eq
+//   fct:  Operator is a function, eg: startswith
 _op: [
     { op: "eq", label: "Equal", notation: "=", syntax: "seq" },
     { op: "ne", label: "Not equal", notation: "<>", syntax: "seq" },
     { op: "gt", label: "Greater than", notation: ">", syntax: "seq" },
     { op: "ge", label: "Greater than or equal", notation: ">=", syntax: "seq" },
     { op: "lt", label: "Less than", notation: "<", syntax: "seq" },
-    { op: "le", label: "Less than or equal", notation: "<=", syntax: "seq" }
+    { op: "le", label: "Less than or equal", notation: "<=", syntax: "seq" },
+    { op: "startswith", label: "Starts with", notation: "startswith", syntax: "fct" }
 ],
 // List of Directions
 _dir: [
@@ -452,7 +455,8 @@ builderGetReports: function(){
                     var thisReportSelect = thisReport.get_item("SelectEntries");
                     var thisReportSort = thisReport.get_item("SortEntries");
                     var thisReportShow = thisReport.get_item("ShowEntries");
-                    var thisReportQuery = thisReport.get_item("Query")
+                    var thisReportQuery = thisReport.get_item("Query");
+                    var thisReportBatchSize = thisReport.get_item("BatchSize");
 
 
                     spReportifyData.builder.reports.push({
@@ -462,7 +466,8 @@ builderGetReports: function(){
                         select: thisReportSelect,
                         sort: thisReportSort,
                         show: thisReportShow,
-                        query: thisReportQuery
+                        query: thisReportQuery,
+                        batchSize: thisReportBatchSize
                     });
                 };
 
@@ -524,7 +529,8 @@ builderLoadReport: function(){
             sort: null,
             show: null,
             description: null,
-            query: null
+            query: null,
+            batchSize: 0
         }
     }
 
@@ -557,7 +563,7 @@ builderLoadReport: function(){
 
         // Report Options
             document.getElementById("BuilderFormOptionDescription").value = spReportifyData.builder.report.description;
-
+            document.getElementById("BuilderFormOptionBatchSize").value = spReportifyData.builder.report.batchSize;
         // Show the Editor Interface
             spr.show("BuilderForm");
 
@@ -966,6 +972,13 @@ builderSave: function(){
             this.ReportRecord.set_item('ListId', spReportifyData.builder.list.id );
             this.ReportRecord.set_item('Description', document.getElementById("BuilderFormOptionDescription").value);
 
+            var OptionBatch = document.getElementById("BuilderFormOptionBatchSize").value;
+            var OptionBatchValue = 0;
+            if( OptionBatch.trim() + "" != "" ){
+                OptionBatchValue = parseInt( OptionBatch );
+            }
+            this.ReportRecord.set_item('BatchSize', OptionBatchValue );
+
             this.ReportRecord.set_item('SelectEntries', StringSelect );
             this.ReportRecord.set_item('SortEntries', StringSort );
             this.ReportRecord.set_item('ShowEntries', StringShow );
@@ -1002,6 +1015,7 @@ builderCloseReport: function(){
 
     // Remove Report Options
         document.getElementById("BuilderFormOptionDescription").value = "";
+        document.getElementById("BuilderFormOptionBatchSize").value = "";
 
     // Reset Builder Form Visibility
         spr.show("BuilderIdentifyReport");
@@ -1043,7 +1057,8 @@ runnerParseReport: function(){
         listId: spReportifyData.runner.api.get_item("ListId"),
         description: spReportifyData.runner.api.get_item("Description"),
         columns: spReportifyData.runner.api.get_item("ShowEntries"),
-        query: spReportifyData.runner.api.get_item("Query")
+        query: spReportifyData.runner.api.get_item("Query"),
+        batchSize: spReportifyData.runner.api.get_item("BatchSize")
     };
     spr.logTrace("Report Definition");
     spr.logTable( spReportifyData.runner.report );
@@ -1052,8 +1067,8 @@ runnerParseReport: function(){
 },
 
 runnerGetFirstBatch: function(){
-    spr.stackAdd( spr.runnerGetData );
     spr.stackAdd( spr.runnerDrawReport );
+    spr.stackAdd( spr.runnerGetData );
     spr.stackAdd( spr.runnerInsertData );
     spr.stackRun();
 },
@@ -1062,40 +1077,6 @@ runnerGetNextBatch: function(){
     spr.stackAdd( spr.runnerInsertData);
     spr.stackRun();
 },
-
-runnerGetData: function(){
-    spr.waitingShow( "Downloading data..." );
-    spReportifyData.runner["dataBatch"] = [];
-    var AjaxOptions = {
-        url: ( spReportifyData.runner.nextPage.hasNextPage ? spReportifyData.runner.nextPage.next : `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}` ) ,
-        method: "GET",
-        async: false,
-        headers: {
-            "accept":"application/json;odata=verbose",
-            "content-type":"application/json;odata=verbose"
-        }
-    }
-
-    // Send Request to Server
-    $.ajax( AjaxOptions )
-    .done( function ( data ){
-        spReportifyData.runner.nextPage.previous = spReportifyData.runner.nextPage.next;
-        if( (data.d).hasOwnProperty('__next') ){
-            spReportifyData.runner.nextPage.next = data.d.__next;
-            spReportifyData.runner.nextPage.hasNextPage = true;
-        }
-        spReportifyData.runner.data.push( data.d.results );
-        spReportifyData.runner["dataBatch"] = data.d.results;
-        
-        spr.stackRun();
-    })
-    .fail( function( jqXHR, textStatus, error ){
-        spr.logError("Error Getting Report.");
-        spr.logError( textStatus );
-        spr.logError( error );
-    })
-},
-
 
 runnerDrawReport: function(){
 
@@ -1113,6 +1094,7 @@ runnerDrawReport: function(){
         })
     });
 
+
     // Table Headers
     var elHeaders = document.createElement( "tr" );
     spReportifyData.runner.columns.forEach( function( thisColumn ){
@@ -1125,6 +1107,48 @@ runnerDrawReport: function(){
 
     spr.stackRun();
 },
+
+runnerGetData: function(){
+    spr.waitingShow( "Downloading data..." );
+    spReportifyData.runner["dataBatch"] = [];
+    var AjaxOptions = {
+        url: ( spReportifyData.runner.nextPage.hasNextPage ? spReportifyData.runner.nextPage.next : `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}&$top=${spReportifyData.runner.report.batchSize}` ) ,
+        method: "GET",
+        async: false,
+        headers: {
+            "accept":"application/json;odata=verbose",
+            "content-type":"application/json;odata=verbose"
+        }
+    }
+    // I used the "NextPage" URL so I remove it and set it in the Previous Page.
+        spReportifyData.runner.nextPage.previous = spReportifyData.runner.nextPage.next;
+        spReportifyData.runner.nextPage.next = "";
+
+    // Send Request to Server
+    $.ajax( AjaxOptions )
+    .done( function ( data ){
+        // If SharePoint returns a Next Page, that is not the most recent used.
+        if( (data.d).hasOwnProperty('__next') && (data.d.__next != spReportifyData.runner.nextPage.previous ) ){
+            spReportifyData.runner.nextPage.next = data.d.__next;
+            spReportifyData.runner.nextPage.hasNextPage = true;
+        }else{
+            spReportifyData.runner.nextPage.hasNextPage = false;
+        }
+        spReportifyData.runner.data = [
+            ...spReportifyData.runner.data,
+            ...data.d.results
+        ];
+        spReportifyData.runner["dataBatch"] = data.d.results;
+    
+        spr.stackRun();
+    })
+    .fail( function( jqXHR, textStatus, error ){
+        spr.logError("Error Getting Report.");
+        spr.logError( textStatus );
+        spr.logError( error );
+    })
+},
+
 
 runnerInsertData: function(){
     // Details

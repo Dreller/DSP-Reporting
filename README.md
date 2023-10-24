@@ -31,6 +31,7 @@ SelectEntries|Multiple lines of text
 ShowEntries|Multiple lines of text
 SortEntries|Multiple lines of text
 Query|Multiple lines of text
+BatchSize|Number (0 decimal)
 
 ## Install the Package
 
@@ -48,47 +49,13 @@ It is a file that set global JavaScript variables, used by the main library, so 
 
 ### Set the SharePoint Site URL
 
-Variable `_URL` must be set to the root addess of the SharePoint site that contains your data.
+Variable `_SPR_URL` must be set to the root addess of the SharePoint site that contains your data.
 
 ### Set the SharePoint List Name where to store Reports
 
-Variable `_REPORT_LIST` must contains the Name/Title of the SharePoint List where reports are saved.
-
----
-
-**dconf.js**
-
-```JavaScript
-/**
- * Configuration File
- */
-
-// SharePoint Site URL
-var _URL = "https://123.sharepoint.com/sites/Mysite";
-
-// List for saving Reports
-var _REPORT_LIST = "Reports";
-
-// Allow reporting on Libraries.
-var _ALLOW_LIBRARY = false;
-
-// Allow reporting on Hidden Libraries
-var _ALLOW_LIBRARY_HIDDEN = false;
-
-// Allow reporting on Lists.
-var _ALLOW_LIST = true;
-
-// Allow reporting on Hidden Lists
-var _ALLOW_LIST_HIDDEN = false;
-
-// Always-available Fields (columns) -> Array of "Name"
-var _ALLOW_FIELDS_ALWAYS = ["ID"];
-
-var _SPREPORTIFY_BUILDER_PAGE = "dbr.aspx";
-var _SPREPORTIFY_RUNNER_PAGE = "drr.aspx";
-```
-
-
+To tell spReportify where to read/write report definitions, you must fill the following variables:
+- Variable `_SPR_REPORTLISTTYPE`: must contains `title` or `guid`, depending on if you want to refer the list using it's Title or it's GUID.
+- Variable `_SPR_REPORTLISTREF`: set the List Title or GUID according to the value you have set in `_SPR_REPORTLISTTYPE`.
 
 
 ## Download

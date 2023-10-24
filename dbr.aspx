@@ -210,6 +210,18 @@
                             </textarea>
                         </td>
                     </tr>
+                    <!-- Report Max Items to returns per page -->
+                    <tr>
+                        <td>
+                            Items by page
+                        </td>
+                        <td>
+                            Number of items to display per page.
+                        </td>
+                        <td>
+                            <input type="number" id="BuilderFormOptionBatchSize" />
+                        </td>
+                    </tr>
                     <!-- .. -->
                 </tbody>
             </table>
