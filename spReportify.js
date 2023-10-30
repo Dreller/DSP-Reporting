@@ -362,6 +362,7 @@ builderUpdateList: function(){
  */
 builderGetColumns: function(){
     var listId = document.getElementById("BuilderFormControlDatasource").value
+
     if( listId != "undefined" && listId+"" != "" ){
         spReportifyData.builder["list"] = {};
         spReportifyData.builder["list"] = spReportifyData.builder.lists.filter(x => x.id == listId)[0];
@@ -1265,10 +1266,114 @@ homeGetReports: function(){
 
 homeBackHome: function(){
     spr.hide("HomeReports");
-
+    spr.hide("HomeDict");
+    spr.hide("HomeDictListName");
+    spr.hide("HomeDictLists");
+    spr.hide("HomeDictColumns");
     spr.show("HomeCards");
 },
 
+homeInitializeDict: function(){
+    document.getElementById("HomeDictListsBody").innerHTML = "";
+    // Create Lists Rows
+    spReportifyData.home.lists.forEach( function( thisList ){
+        var elRow = document.createElement("tr");
+        elRow.id = thisList.id;
+        elRow.innerHTML = `<td><code>${thisList.id}</code></td><td>${thisList.name}</td><td>${thisList.type}</td>
+        <td><span class="button" onclick="spReportify.homeBrowseList('${thisList.id}');">Browse</span></td>
+        `;
+        document.getElementById("HomeDictListsBody").appendChild(elRow);
+    });
+    spr.show("HomeDict");
+    spr.hide("HomeDictButtonBack");
+    spr.show("HomeDictLists");
+    spr.hide("HomeCards");
+},
+
+homeBackDict: function(){
+    spr.hide("HomeDictColumns");
+    spr.hide("HomeDictListName");
+    spr.show("HomeDictLists");
+},
+
+homeBrowseList: function( listID ){
+    spr.waitingShow("Fetching Columns...");
+
+        spr.logTrace( "Selected List" );
+        spr.logTable( listID );
+
+        _api = spReportifyData.sp.web.get_lists().getById(listID).get_fields();
+        spReportifyData.sp.ctx.load( _api );
+        spReportifyData.sp.ctx.executeQueryAsync(
+            // Success
+            function(){
+                spReportifyData.home["columns"] = [];
+                var enumFields = _api.getEnumerator();
+                while( enumFields.moveNext() ){
+                    var thisField = enumFields.get_current();
+                    console.log( thisField );
+                    var thisFieldTitle = thisField.get_title();
+                    var thisFieldStatic = thisField.get_staticName();
+                    var thisFieldSealed = thisField.get_sealed();
+                    var thisFieldHidden = thisField.get_hidden();
+                    var thisFieldFromBase = thisField.get_fromBaseType();
+                    var thisFieldSortable = thisField.get_sortable();
+                    var thisFieldXML = thisField.get_schemaXml();
+                    var thisFieldType = thisField.get_typeAsString();
+                    var thisFieldDescription = thisField.get_description();
+                    var thisFieldIndexed = thisField.get_indexed();
+
+                    spReportifyData.home.columns.push({
+                        title: thisFieldTitle,
+                        static: thisFieldStatic,
+                        sealed: thisFieldSealed,
+                        hidden: thisFieldHidden,
+                        fromBase: thisFieldFromBase,
+                        sortable: thisFieldSortable,
+                        xml: thisFieldXML,
+                        description: thisFieldDescription,
+                        indexed: thisFieldIndexed,
+                        type: thisFieldType
+                    });
+
+                }
+                // Sort the list of columns
+                    spReportifyData.home.columns.sort((a, b) => {
+                        const nameA = a.title.toLowerCase();
+                        const nameB = b.title.toLowerCase();
+                        if( nameA < nameB ){ return -1; }
+                        if (nameA > nameB ){ return 1;  }
+                        return 0;
+                    });
+                
+                spr.logTrace( "Available Columns in the Selected List" );
+                spr.logTable( spReportifyData.home.columns );
+
+                // Write the Dictionary
+                spReportifyData.home.columns.forEach( function( thisColumn ){
+                    var elRow = document.createElement("tr");
+                    elRow.innerHTML = `<td><code>${thisColumn.static}</code></td><td>${thisColumn.title}</td>
+                    <td>${thisColumn.type}</td><td>${thisColumn.description}</td>
+                    <td style="text-align:center;">${(thisColumn.sortable?'&#10004;':'')}</td>
+                    <td style="text-align:center;">${(thisColumn.indexed?'&#10004;':'')}</td>
+                    <td style="text-align:center;">${(thisColumn.sealed?'&#10004;':'')}</td>
+                    <td style="text-align:center;">${(thisColumn.hidden?'&#10004;':'')}</td>`;
+                    document.getElementById("HomeDictColumnsBody").appendChild(elRow);
+                });
+
+                spr.show("HomeDictListName");
+                document.getElementById("HomeDictListName").innerHTML = spReportifyData.home.lists.find( x => x.id == listID ).name;
+                spr.show("HomeDictButtonBack");
+                spr.show("HomeDictColumns");
+                spr.hide("HomeDictLists");
+                spr.waitingHide();
+
+            },
+            // Failure
+            Function.createDelegate( this, this.logSysError )
+        );
+
+},
 
 /**
  * stackAdd
