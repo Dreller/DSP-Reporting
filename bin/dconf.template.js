@@ -118,5 +118,5 @@ var _SPR_LOGLEVEL = "trace";
  * Runner.  Example:  'file.aspx'.
  * 
  */
-var _SPR_PAGEBUILDER = "dbr.aspx";
-var _SPR_PAGERUNNER = "drr.aspx";
+var _SPR_PAGEBUILDER = "sprBuild.aspx";
+var _SPR_PAGERUNNER = "sprExecute.aspx";
