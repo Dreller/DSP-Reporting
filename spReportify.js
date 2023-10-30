@@ -12,7 +12,8 @@
         site: {},           // Info about the SharePoint Site.
         builder: {},        // Work Data for the Report Builder.
         environ: {},        // Environment (Browser, Language, etc.)
-        runner: {}
+        runner: {},
+        home: {}
     }
 // Variable to refer to SP API
     let _api;
@@ -88,7 +89,16 @@ init: function(){
             page: ( (window.location.pathname).split("/").pop() ).toLowerCase(),
         };
         // Runtime Mode
-            spReportifyData.environ["mode"] = ( spReportifyData.environ.page == spReportifyData.config.pageBuilder ? "builder" : "runner" );
+            switch( spReportifyData.environ.page ){
+                case spReportifyData.config.pageBuilder:
+                    spReportifyData.environ["mode"] = "builder";
+                    break;
+                case spReportifyData.config.pageRunner:
+                    spReportifyData.environ["mode"] = "runner";
+                    break;
+                default:
+                    spReportifyData.environ["mode"] = "maintenance";
+            }
 
     // Output to Console - Initialization
         spr.logTitle( "Initializing spReportify..." );
@@ -115,6 +125,12 @@ start: function(){
         this.waitingCreate();
         this.stackAdd( this.getUser );
         this.stackAdd( this.getSite );
+
+        // Commands for Maintenance
+            if( spReportifyData.environ.mode == "maintenance" ){
+                spReportifyData.sp.caml = new SP.CamlQuery();
+                this.stackAdd( this.getLists );
+            }
 
         // Commands for Report Builder
             if( spReportifyData.environ.mode == "builder" ){
@@ -185,7 +201,7 @@ getSite: function(){
  * Retrieve all allowed lists & libraries in the site.
  */
 getLists: function(){
-    spReportifyData.builder["lists"] = [];
+    var localList = [];
     _api = spReportifyData.sp.web.get_lists();
     spReportifyData.sp.ctx.load( _api );
     spReportifyData.sp.ctx.executeQueryAsync(
@@ -224,7 +240,7 @@ getLists: function(){
 
                 // Add the list to the spReportifyData.builder.lists Array
                 if( KeepThisList ){
-                    spReportifyData.builder.lists.push(
+                    localList.push(
                         {
                             id: thisListId,
                             name: thisListName,
@@ -234,8 +250,15 @@ getLists: function(){
                     )
                 }
             }
+
+            if( spReportifyData.environ.mode == 'builder' ){
+                spReportifyData.builder["lists"] = localList;
+            }else{
+                spReportifyData.home["lists"] = localList;
+            }
+
             spr.logInfo( "Available Lists" );
-            spr.logTable( spReportifyData.builder.lists );
+            spr.logTable( localList );
             spr.stackRun();
         },
         // Failure
@@ -339,6 +362,7 @@ builderUpdateList: function(){
  */
 builderGetColumns: function(){
     var listId = document.getElementById("BuilderFormControlDatasource").value
+
     if( listId != "undefined" && listId+"" != "" ){
         spReportifyData.builder["list"] = {};
         spReportifyData.builder["list"] = spReportifyData.builder.lists.filter(x => x.id == listId)[0];
@@ -1172,6 +1196,184 @@ runnerInsertData: function(){
     spr.stackRun();
 },
 
+
+homeGetReports: function(){
+    spr.waitingShow("Fetching Available Reports...");
+    spReportifyData.sp.caml.set_viewXml('<View><RowLimit>5000</RowLimit></View>');
+    // Get Reports using Reports List Reference
+    switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
+        case "title":
+            _api = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListRef).getItems( spReportifyData.sp.caml );
+            break;
+        case "guid":
+            _api = spReportifyData.sp.web.get_lists().getById(spReportifyData.config.reportListRef).getItems( spReportifyData.sp.caml );
+            break;
+    }
+    spReportifyData.sp.ctx.load( _api );
+    spReportifyData.sp.ctx.executeQueryAsync(
+        // Success
+        function(){
+            spReportifyData.home["reports"] = [];
+            var enumReports = _api.getEnumerator();
+            while( enumReports.moveNext() ){
+                var thisReport = enumReports.get_current();
+                var thisReportId = thisReport.get_id();
+                var thisReportTitle = thisReport.get_item("Title");
+                var thisReportDescription = thisReport.get_item("Description");
+                var thisReportList = spReportifyData.home.lists.find( x => x.id == thisReport.get_item("ListId") );
+
+                spReportifyData.home.reports.push({
+                    id: thisReportId,
+                    title: thisReportTitle,
+                    description: ( thisReportDescription == null ? '' : thisReportDescription ),
+                    listId: thisReportList.id,
+                    listName: thisReportList.name
+                });
+            };
+
+            // Sort the list of reports
+                spReportifyData.home.reports.sort((a, b) => {
+                    const nameA = a.title.toLowerCase();
+                    const nameB = b.title.toLowerCase();
+                    if( nameA < nameB ){ return -1; }
+                    if (nameA > nameB ){ return 1;  }
+                    return 0;
+                });
+
+            spr.logTrace( "All Available Reports" );
+            spr.logTable( spReportifyData.home.reports );
+            // Insert Reports in the Homepage
+            document.getElementById("HomeReportsBody").innerHTML="";
+            spr.show("HomeReports");
+            spr.hide("HomeCards");
+            (spReportifyData.home.reports).forEach( function( thisReport){
+                var elRow = document.createElement("tr");
+                elRow.id = thisReport.id;
+                elRow.innerHTML = `<td>${thisReport.listName}</td><td>${thisReport.title}</td><td>${thisReport.description}</td><td>
+                <span class="button" onclick="location.href=spReportifyData.config.pageBuilder + '?rpt=${thisReport.id}'">Edit</span>
+                &nbsp;
+                <span class="button" onclick="location.href=spReportifyData.config.pageRunner + '?rpt=${thisReport.id}'">Execute</span>
+                `;
+                document.getElementById("HomeReportsBody").appendChild( elRow );
+            });
+            spr.waitingHide();
+        },
+        // Failure
+        Function.createDelegate( this, this.logSysError )
+    );
+        
+},
+
+homeBackHome: function(){
+    spr.hide("HomeReports");
+    spr.hide("HomeDict");
+    spr.hide("HomeDictListName");
+    spr.hide("HomeDictLists");
+    spr.hide("HomeDictColumns");
+    spr.show("HomeCards");
+},
+
+homeInitializeDict: function(){
+    document.getElementById("HomeDictListsBody").innerHTML = "";
+    // Create Lists Rows
+    spReportifyData.home.lists.forEach( function( thisList ){
+        var elRow = document.createElement("tr");
+        elRow.id = thisList.id;
+        elRow.innerHTML = `<td><code>${thisList.id}</code></td><td>${thisList.name}</td><td>${thisList.type}</td>
+        <td><span class="button" onclick="spReportify.homeBrowseList('${thisList.id}');">Browse</span></td>
+        `;
+        document.getElementById("HomeDictListsBody").appendChild(elRow);
+    });
+    spr.show("HomeDict");
+    spr.hide("HomeDictButtonBack");
+    spr.show("HomeDictLists");
+    spr.hide("HomeCards");
+},
+
+homeBackDict: function(){
+    spr.hide("HomeDictColumns");
+    spr.hide("HomeDictListName");
+    spr.show("HomeDictLists");
+},
+
+homeBrowseList: function( listID ){
+    spr.waitingShow("Fetching Columns...");
+
+        spr.logTrace( "Selected List" );
+        spr.logTable( listID );
+
+        _api = spReportifyData.sp.web.get_lists().getById(listID).get_fields();
+        spReportifyData.sp.ctx.load( _api );
+        spReportifyData.sp.ctx.executeQueryAsync(
+            // Success
+            function(){
+                spReportifyData.home["columns"] = [];
+                var enumFields = _api.getEnumerator();
+                while( enumFields.moveNext() ){
+                    var thisField = enumFields.get_current();
+                    console.log( thisField );
+                    var thisFieldTitle = thisField.get_title();
+                    var thisFieldStatic = thisField.get_staticName();
+                    var thisFieldSealed = thisField.get_sealed();
+                    var thisFieldHidden = thisField.get_hidden();
+                    var thisFieldFromBase = thisField.get_fromBaseType();
+                    var thisFieldSortable = thisField.get_sortable();
+                    var thisFieldXML = thisField.get_schemaXml();
+                    var thisFieldType = thisField.get_typeAsString();
+                    var thisFieldDescription = thisField.get_description();
+                    var thisFieldIndexed = thisField.get_indexed();
+
+                    spReportifyData.home.columns.push({
+                        title: thisFieldTitle,
+                        static: thisFieldStatic,
+                        sealed: thisFieldSealed,
+                        hidden: thisFieldHidden,
+                        fromBase: thisFieldFromBase,
+                        sortable: thisFieldSortable,
+                        xml: thisFieldXML,
+                        description: thisFieldDescription,
+                        indexed: thisFieldIndexed,
+                        type: thisFieldType
+                    });
+
+                }
+                // Sort the list of columns
+                    spReportifyData.home.columns.sort((a, b) => {
+                        const nameA = a.title.toLowerCase();
+                        const nameB = b.title.toLowerCase();
+                        if( nameA < nameB ){ return -1; }
+                        if (nameA > nameB ){ return 1;  }
+                        return 0;
+                    });
+                
+                spr.logTrace( "Available Columns in the Selected List" );
+                spr.logTable( spReportifyData.home.columns );
+
+                // Write the Dictionary
+                spReportifyData.home.columns.forEach( function( thisColumn ){
+                    var elRow = document.createElement("tr");
+                    elRow.innerHTML = `<td><code>${thisColumn.static}</code></td><td>${thisColumn.title}</td>
+                    <td>${thisColumn.type}</td><td>${thisColumn.description}</td>
+                    <td style="text-align:center;">${(thisColumn.sortable?'&#10004;':'')}</td>
+                    <td style="text-align:center;">${(thisColumn.indexed?'&#10004;':'')}</td>
+                    <td style="text-align:center;">${(thisColumn.sealed?'&#10004;':'')}</td>
+                    <td style="text-align:center;">${(thisColumn.hidden?'&#10004;':'')}</td>`;
+                    document.getElementById("HomeDictColumnsBody").appendChild(elRow);
+                });
+
+                spr.show("HomeDictListName");
+                document.getElementById("HomeDictListName").innerHTML = spReportifyData.home.lists.find( x => x.id == listID ).name;
+                spr.show("HomeDictButtonBack");
+                spr.show("HomeDictColumns");
+                spr.hide("HomeDictLists");
+                spr.waitingHide();
+
+            },
+            // Failure
+            Function.createDelegate( this, this.logSysError )
+        );
+
+},
 
 /**
  * stackAdd

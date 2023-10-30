@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>dSP Report Builder</title>
+    <title>spReportify &#10149; Builder</title>
     <link rel="icon" type="image/x-icon" href="../_layouts/15/images/favicon.ico?rev=23">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

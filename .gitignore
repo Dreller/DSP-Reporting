@@ -1,2 +1,4 @@
 # Ignore my Config file
 bin/dconf.js
+# Other files
+desktop.ini
