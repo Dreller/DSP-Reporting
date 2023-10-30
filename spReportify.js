@@ -19,14 +19,17 @@
 
 const spReportify = {
 vm: String.fromCharCode(253),
-// List of Operators
+// List of Operators - Syntax can be: 
+//   seq:  Operator is sequential, eg:  eq
+//   fct:  Operator is a function, eg: startswith
 _op: [
     { op: "eq", label: "Equal", notation: "=", syntax: "seq" },
     { op: "ne", label: "Not equal", notation: "<>", syntax: "seq" },
     { op: "gt", label: "Greater than", notation: ">", syntax: "seq" },
     { op: "ge", label: "Greater than or equal", notation: ">=", syntax: "seq" },
     { op: "lt", label: "Less than", notation: "<", syntax: "seq" },
-    { op: "le", label: "Less than or equal", notation: "<=", syntax: "seq" }
+    { op: "le", label: "Less than or equal", notation: "<=", syntax: "seq" },
+    { op: "startswith", label: "Starts with", notation: "startswith", syntax: "fct" }
 ],
 // List of Directions
 _dir: [
@@ -38,39 +41,71 @@ _dir: [
  * Initialize the spReportify Environment.
  */
 init: function(){
-    this.logBigTitle();
-    this.logTitle( `Initializing spReportity...` );
+    // Big Title to Console
+        this.logBigTitle();
+
+    // Set the Runtime Level
+        var LogLevel = 0;
+        switch( _SPR_LOGLEVEL ){
+            case "error":
+                LogLevel = 4;
+                break;
+            case "warn":
+                LogLevel = 3;
+                break;
+            case "info":
+                LogLevel = 2;
+                break;
+            case "trace":
+                LogLevel = 1;
+                break;
+        }
+
+    // Validate the SharePoint Site URL
+        var ThisUrl = new URL( _SPR_URL );
+        // Ensure we are using https
+            ThisUrl.protocol = "https:";
+    
+    // Build the Configuration Object
+        spReportifyData.config = {
+            url: ThisUrl.toString(),
+            reportListRefType: _SPR_REPORTLISTTYPE,
+            reportListRef: _SPR_REPORTLISTREF,
+            allowLibraries: _SPR_ALLOWLIBRARY,
+            allowHiddenLibraries: _SPR_ALLOWHIDDENLIBRARY,
+            allowLists: _SPR_ALLOWLIST,
+            allowHiddenLists: _SPR_ALLOWHIDDENLIST,
+            allowFields: _SPR_ALLOWFIELDS,
+            logLevel: LogLevel,
+            pageBuilder: _SPR_PAGEBUILDER.toLowerCase(),
+            pageRunner: _SPR_PAGERUNNER.toLowerCase()
+        }
+    
     // Load Environment Information
         spReportifyData.environ = {
             language: ((window.navigator.language).split("-")[0]).toLowerCase(),
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            page: (window.location.pathname).split("/").pop()
+            page: ( (window.location.pathname).split("/").pop() ).toLowerCase(),
         };
+        // Runtime Mode
+            spReportifyData.environ["mode"] = ( spReportifyData.environ.page == spReportifyData.config.pageBuilder ? "builder" : "runner" );
 
-        this.logMute("spReportifyData.environ");
-        console.table( spReportifyData.environ );
-
-    // Load Configurations
-        spReportifyData.config = {
-            url: _URL,
-            reportListName: _REPORT_LIST,
-            allowLibraries: _ALLOW_LIBRARY,
-            allowLists: _ALLOW_LIST,
-            allowHiddenLibraries: _ALLOW_LIBRARY_HIDDEN,
-            allowHiddenLists: _ALLOW_LIST_HIDDEN,
-            alwaysAllowFields: _ALLOW_FIELDS_ALWAYS
-        }
-        this.logMute("spReportifyData.config");
-        console.table( spReportifyData.config );
-        
-        // Initialization Mode
-        spReportifyData.environ["mode"] = (spReportifyData.environ.page == _SPREPORTIFY_BUILDER_PAGE ? "builder" : "runner");
+    // Output to Console - Initialization
+        spr.logTitle( "Initializing spReportify..." );
+        spr.logTrace( `Log Level is: ${(_SPR_LOGLEVEL).toUpperCase()} (${spReportifyData.config.logLevel})` );
+        spr.logTrace("Configurations");
+        spr.logTable( spReportifyData.config );
+        spr.logTrace("Environment");
+        spr.logTable( spReportifyData.environ );
+    
+    // Start the Script
         this.start();
-
 },
 
 start: function(){
-    spr.logTitle( `Starting in "${spReportifyData.environ.mode}" mode` );
+    // Log Intro
+        spr.logInfo( `Running spReportify in "${spReportifyData.environ.mode}" mode.` );
+
     // SharePoint Site Context
         spReportifyData.sp.ctx = new SP.ClientContext( spReportifyData.config.url );
         spReportifyData.sp.web = spReportifyData.sp.ctx.get_web();
@@ -82,22 +117,27 @@ start: function(){
         this.stackAdd( this.getSite );
 
         // Commands for Report Builder
-        if( spReportifyData.environ.mode == "builder" ){
-            this.waitingShow( "Starting Report Builder..." );
-            spReportifyData.sp.caml = new SP.CamlQuery();
-            this.stackAdd( this.getLists );
-            this.stackAdd( this.initBuilder );
-            spReportifyData.builder.mode = "edit";
-        }
+            if( spReportifyData.environ.mode == "builder" ){
+                this.waitingShow( "Starting Report Builder..." );
+                spReportifyData.sp.caml = new SP.CamlQuery();
+                this.stackAdd( this.getLists );
+                this.stackAdd( this.initBuilder );
+                spReportifyData.builder.mode = "edit";
+            }
         
         // Commends for Report Runner
-        if( spReportifyData.environ.mode == "runner" ){
-            this.waitingShow( "Starting Report Runner..." );
-            this.stackAdd( this.getParams );
-            this.stackAdd( this.runnerGetReport );
+            if( spReportifyData.environ.mode == "runner" ){
+                spReportifyData.runner["nextPage"] = {
+                    hasNextPage: false,
+                    previous: "",
+                    next: ""
+                }
+                this.waitingShow( "Starting Report Runner..." );
+                this.stackAdd( this.getParams );
+                this.stackAdd( this.runnerGetReport );
 
-            //...
-        }
+                //...
+            }
 
     // Start Command Stack
         this.stackRun();
@@ -118,14 +158,11 @@ getUser: function(){
             email: _api.get_email(),
             title: _api.get_title()
         };
-        spr.logTitle( "Runtime User Information" );
-        console.table( spReportifyData.user );
+        spr.logInfo( "Runtime User Information" );
+        spr.logTable( spReportifyData.user );
         spr.stackRun();
-        },
-        // Fail
-        function(sender, args){
-            console.error('Unable to getUser() - ' + args.get_message() );
-        }
+        }, 
+        Function.createDelegate( this, this.logSysError )
     );
 },
 
@@ -138,8 +175,8 @@ getSite: function(){
     spReportifyData.site = {
         title: spReportifyData.sp.web.get_title()
     };
-    spr.logTitle( "SharePoint Site Information" );
-    console.table( spReportifyData.site );
+    spr.logInfo( "SharePoint Site Information" );
+    spr.logTable( spReportifyData.site );
     spr.stackRun();
 },
 
@@ -197,14 +234,12 @@ getLists: function(){
                     )
                 }
             }
-            spr.logTitle( "Available Lists" );
-            console.table( spReportifyData.builder.lists );
+            spr.logInfo( "Available Lists" );
+            spr.logTable( spReportifyData.builder.lists );
             spr.stackRun();
         },
         // Failure
-        function( sender, args ){
-            console.error('Unable to getLists() - ' + args.get_message() );
-        }
+        Function.createDelegate( this, this.logSysError )
     )
 },
 
@@ -305,13 +340,12 @@ builderUpdateList: function(){
 builderGetColumns: function(){
     var listId = document.getElementById("BuilderFormControlDatasource").value
     if( listId != "undefined" && listId+"" != "" ){
-        console.log( "Updating Builder for List ID '" + listId + "'" )
         spReportifyData.builder["list"] = {};
         spReportifyData.builder["list"] = spReportifyData.builder.lists.filter(x => x.id == listId)[0];
         spReportifyData.builder.list["id"] = listId;
 
-        spr.logTitle( "Selected List" );
-        console.table( spReportifyData.builder.list );
+        spr.logTrace( "Selected List" );
+        spr.logTable( spReportifyData.builder.list );
 
         _api = spReportifyData.sp.web.get_lists().getById(listId).get_fields();
         spReportifyData.sp.ctx.load( _api );
@@ -322,12 +356,14 @@ builderGetColumns: function(){
                 var enumFields = _api.getEnumerator();
                 while( enumFields.moveNext() ){
                     var thisField = enumFields.get_current();
-
+                    console.log( thisField );
                     var thisFieldTitle = thisField.get_title();
                     var thisFieldStatic = thisField.get_staticName();
                     var thisFieldSealed = thisField.get_sealed();
                     var thisFieldHidden = thisField.get_hidden();
                     var thisFieldFromBase = thisField.get_fromBaseType();
+                    var thisFieldSortable = thisField.get_sortable();
+                    var thisFieldXML = thisField.get_schemaXml();
 
                     var KeepThisField = true;
 
@@ -341,7 +377,7 @@ builderGetColumns: function(){
 
 
                     // Override the KeepThisField if the Name is in the _ALLOW_FIELDS_ALWAYS config.
-                    if( thisFieldStatic in spReportifyData.config.alwaysAllowFields ){
+                    if( thisFieldStatic in spReportifyData.config.allowFields ){
                         KeepThisField = true;
                     }
 
@@ -351,7 +387,10 @@ builderGetColumns: function(){
                             name: thisFieldStatic,
                             title: thisFieldTitle,
                             type: thisField.get_typeAsString(),
-                            description: thisField.get_description()
+                            description: thisField.get_description(),
+                            sortable: thisFieldSortable,
+                            indexed: thisField.get_indexed(),
+                            schema: thisFieldXML
                         });
                     }
 
@@ -365,8 +404,8 @@ builderGetColumns: function(){
                         return 0;
                     });
                 
-                spr.logTitle( "Available Columns in the Selected List" );
-                console.table( spReportifyData.builder.columns );
+                spr.logTrace( "Available Columns in the Selected List" );
+                spr.logTable( spReportifyData.builder.columns );
 
                 // Write the Dictionary
                 spReportifyData.builder.columns.forEach( function( thisColumn ){
@@ -379,9 +418,7 @@ builderGetColumns: function(){
                 spr.stackRun();
             },
             // Failure
-            function( sender, args ){
-                console.error('Unable to get Columns from builderUpdateList() - ' + args.get_message() );
-            }
+            Function.createDelegate( this, this.logSysError )
         );
         
     }
@@ -395,7 +432,15 @@ builderGetReports: function(){
     var listId = document.getElementById("BuilderFormControlDatasource").value
     if( listId != "undefined" && listId+"" != "" ){
         spReportifyData.sp.caml.set_viewXml('<View><Query><Where><Eq><FieldRef Name=\'ListId\'/><Value Type=\'Text\'>' + listId + '</Value></Eq></Where></Query></View>');
-        _api = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).getItems( spReportifyData.sp.caml );
+        // Get Reports using Reports List Reference
+        switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
+            case "title":
+                _api = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListRef).getItems( spReportifyData.sp.caml );
+                break;
+            case "guid":
+                _api = spReportifyData.sp.web.get_lists().getById(spReportifyData.config.reportListRef).getItems( spReportifyData.sp.caml );
+                break;
+        }
         spReportifyData.sp.ctx.load( _api );
         spReportifyData.sp.ctx.executeQueryAsync(
             // Success
@@ -410,7 +455,8 @@ builderGetReports: function(){
                     var thisReportSelect = thisReport.get_item("SelectEntries");
                     var thisReportSort = thisReport.get_item("SortEntries");
                     var thisReportShow = thisReport.get_item("ShowEntries");
-                    var thisReportQuery = thisReport.get_item("Query")
+                    var thisReportQuery = thisReport.get_item("Query");
+                    var thisReportBatchSize = thisReport.get_item("BatchSize");
 
 
                     spReportifyData.builder.reports.push({
@@ -420,7 +466,8 @@ builderGetReports: function(){
                         select: thisReportSelect,
                         sort: thisReportSort,
                         show: thisReportShow,
-                        query: thisReportQuery
+                        query: thisReportQuery,
+                        batchSize: thisReportBatchSize
                     });
                 };
 
@@ -433,14 +480,12 @@ builderGetReports: function(){
                         return 0;
                     });
 
-                spr.logTitle( "Available Reports in the Selected List" );
-                console.table( spReportifyData.builder.reports );
+                spr.logTrace( "Available Reports in the Selected List" );
+                spr.logTable( spReportifyData.builder.reports );
                 spr.stackRun();
             },
             // Failure
-            function( sender, args ){
-                console.error('Unable to get Reports from builderGetReports() - ' + args.get_message() );
-            }
+            Function.createDelegate( this, this.logSysError )
         );
         
     }
@@ -453,8 +498,8 @@ builderGetReports: function(){
 builderToggleMode: function(TargetMode = 1){
     var NewMode = ( TargetMode == 1 || typeof TargetMode == "undefined" || typeof spReportifyData.builder.mode == "undefined" ? "add" : "edit" );
     if( NewMode == spReportifyData.builder.mode ){ return; }
-    spr.logTitle( "Changing Builder Mode" );
-    console.log( `Current Mode: "${spReportifyData.builder.mode}"` );
+    spr.logTrace( "Changing Builder Mode" );
+    spr.logTrace( `Current Mode: "${spReportifyData.builder.mode}"` );
     spReportifyData.builder.mode = NewMode;
     if( spReportifyData.builder.mode == "edit" ){
         document.getElementById("BuilderFormControlActionChoiceEdit").checked = true;
@@ -465,7 +510,7 @@ builderToggleMode: function(TargetMode = 1){
         document.getElementById("BuilderFormSectionReportPicker").style.setProperty("display", "none");
         document.getElementById("BuilderFormSectionReportNaming").style.setProperty("display", "block");
     }
-    console.log( `New Mode: "${spReportifyData.builder.mode}"` );
+    spr.logTrace( `New Mode: "${spReportifyData.builder.mode}"` );
     spr.stackRun();
 },
 
@@ -484,12 +529,13 @@ builderLoadReport: function(){
             sort: null,
             show: null,
             description: null,
-            query: null
+            query: null,
+            batchSize: 0
         }
     }
 
-    spr.logTitle(`Report to ${spReportifyData.builder.mode}`);
-    console.table( spReportifyData.builder.report );
+    spr.logTrace(`Report to ${spReportifyData.builder.mode}`);
+    spr.logTable( spReportifyData.builder.report );
 
     // Draw the Builder Interface to display Options
         // Hide the Report Selection Form and show a read-only summary
@@ -517,7 +563,7 @@ builderLoadReport: function(){
 
         // Report Options
             document.getElementById("BuilderFormOptionDescription").value = spReportifyData.builder.report.description;
-
+            document.getElementById("BuilderFormOptionBatchSize").value = spReportifyData.builder.report.batchSize;
         // Show the Editor Interface
             spr.show("BuilderForm");
 
@@ -556,7 +602,7 @@ builderValidateReportName: function(){
 builderDrawRow: function( SectionNumber, RowDefn = null ){
     spr.logTitle("Add a new Row in Section # " + SectionNumber);
     var RowUID = crypto.randomUUID();
-    console.log('Row UID: ' + RowUID ); 
+    spr.logTrace('Row UID: ' + RowUID ); 
     // Set the Literal Section Name
     var SectionName = "";
     switch( SectionNumber ){
@@ -635,10 +681,14 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
         elSelect.id = "Column_" + RowUID;
         // Insert Columns in the Select
             spReportifyData.builder.columns.forEach( function( thisColumn ){
-                var elOption = document.createElement("option");
-                elOption.value = thisColumn.name;
-                elOption.text = thisColumn.title;
-                elSelect.appendChild( elOption );
+                // Skip "sortable = false" for SectionNumber = 2
+                // Columns needs to be sortable to be used in this section.
+                    if( SectionNumber != 2 || thisColumn.sortable == true ){
+                        var elOption = document.createElement("option");
+                        elOption.value = thisColumn.name;
+                        elOption.text = thisColumn.title;
+                        elSelect.appendChild( elOption );
+                    }
             });
         // Set the Value of the Select
         elSelect.value = RowColumn;
@@ -746,7 +796,7 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
                 TableName = "BuilderFormShowTableBody";
                 break;
         }
-        spr.logMute("Destination of Row: " + TableName );
+        spr.logTrace("Destination of Row: " + TableName );
         document.getElementById(TableName).appendChild( elRow );
 },
 
@@ -756,8 +806,8 @@ builderDrawRow: function( SectionNumber, RowDefn = null ){
  * Action:  rm, up, down.
  */
 builderManipulateRow: function( Action, RowId ){
-    spr.logTitle("Action on Row: " + Action );
-    spr.logMute("Row ID: " + RowId );
+    spr.logTrace("Action on Row: " + Action );
+    spr.logTrace("Row ID: " + RowId );
     
     var elManipulate = document.getElementById( RowId );
 
@@ -770,7 +820,7 @@ builderManipulateRow: function( Action, RowId ){
 },
 
 builderSave: function(){
-    spr.logTitle( "Save the Report ");
+    spr.logInfo( "Save the Report ");
 
     // Build Select, Sort and Show Strings
     var QueryArray = [];
@@ -781,27 +831,28 @@ builderSave: function(){
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
-            // TODO: IF COLUMN IS NOT SET
-            var Operator = document.getElementById("Operator_" + thisRowUID).value;
-            var Value = document.getElementById("Value_" + thisRowUID).value;
-            // String
-            ThisArray.push( ([ "R", Column, Operator, Value ]).join( spr.vm ) );
-            // Query
-                var ThisOperator = spr._op.find( x => x.op == Operator );
-                console.log( `Details for Operator "${Operator}"` );
-                console.table( ThisOperator );
-                // Quote Text/Note Values
-                var ThisColumn = spReportifyData.builder.columns.find( x => x.name == Column );
-                console.log( `Details for Column "${Column}"` );
-                console.table( ThisColumn );
-                if( (["Text", "Note"]).includes( ThisColumn.type ) ){
-                    Value = `'${Value}'`;
-                }
-                if( ThisOperator.syntax == "seq" ){
-                    ThisQueryArray.push( `(${Column} ${Operator} ${Value})` );
-                }else{
-                    ThisQueryArray.push( `(${Operator}(${Column},${Value})` );
-                }
+            if( Column != "" ){
+                var Operator = document.getElementById("Operator_" + thisRowUID).value;
+                var Value = document.getElementById("Value_" + thisRowUID).value;
+                // String
+                ThisArray.push( ([ "R", Column, Operator, Value ]).join( spr.vm ) );
+                // Query
+                    var ThisOperator = spr._op.find( x => x.op == Operator );
+                    console.log( `Details for Operator "${Operator}"` );
+                    console.table( ThisOperator );
+                    // Quote Text/Note Values
+                    var ThisColumn = spReportifyData.builder.columns.find( x => x.name == Column );
+                    console.log( `Details for Column "${Column}"` );
+                    console.table( ThisColumn );
+                    if( (["Text", "Note"]).includes( ThisColumn.type ) ){
+                        Value = `'${Value}'`;
+                    }
+                    if( ThisOperator.syntax == "seq" ){
+                        ThisQueryArray.push( `(${Column} ${Operator} ${Value})` );
+                    }else{
+                        ThisQueryArray.push( `(${Operator}(${Column},${Value})` );
+                    }
+            }
         });
         var StringSelect = ThisArray.join( "\n" );
         var QuerySelect = "";
@@ -810,12 +861,12 @@ builderSave: function(){
                 QueryArray.push( QuerySelect );
             }
 
-        spr.logMute( 'SELECT' );
-        console.table( ThisArray );
-        console.log( "String for the database" );
-        console.log( StringSelect );
-        console.log( "String for the query" );
-        console.log( QuerySelect );
+        spr.logTrace( 'SELECT' );
+        spr.logTable( ThisArray );
+        spr.logTrace( "String for the database" );
+        spr.logTrace( StringSelect );
+        spr.logTrace( "String for the query" );
+        spr.logTrace( QuerySelect );
 
         // Sort
         var ThisArray = [];
@@ -825,12 +876,13 @@ builderSave: function(){
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
-            // TODO: IF COLUMN IS NOT SET
-            var Direction = document.getElementById("Direction_" + thisRowUID).value;
-            // String
-            ThisArray.push( ([ "R", Column, Direction ]).join( spr.vm ) );
-            // Query
-            ThisQueryArray.push( `${Column} ${Direction}` );
+            if( Column != "" ){
+                var Direction = document.getElementById("Direction_" + thisRowUID).value;
+                // String
+                ThisArray.push( ([ "R", Column, Direction ]).join( spr.vm ) );
+                // Query
+                ThisQueryArray.push( `${Column} ${Direction}` );
+            }
         });
         var StringSort = ThisArray.join( "\n" );
         var QuerySort = "";
@@ -839,12 +891,12 @@ builderSave: function(){
                 QueryArray.push( QuerySort );
             }
 
-        spr.logMute( 'SORT' );
-        console.table( ThisArray );
-        console.log( "String for the database" );
-        console.log( StringSort );
-        console.log( "String for the query" );
-        console.log( QuerySort );
+        spr.logTrace( 'SORT' );
+        spr.logTable( ThisArray );
+        spr.logTrace( "String for the database" );
+        spr.logTrace( StringSort );
+        spr.logTrace( "String for the query" );
+        spr.logTrace( QuerySort );
 
         // Show
         var ThisArray = [];
@@ -855,16 +907,17 @@ builderSave: function(){
         Rows.forEach( function( thisRow ){
             var thisRowUID = (thisRow.id).split("_")[1];
             var Column = document.getElementById("Column_" + thisRowUID).value;
-            // TODO: IF COLUMN IS NOT SET
-            var Label = document.getElementById("Label_" + thisRowUID).value;
-            // Detect presence of ID field
-            if( Column == "ID" ){
-                ShowContainsIdField = true;
+            if( Column != "" ){
+                var Label = document.getElementById("Label_" + thisRowUID).value;
+                // Detect presence of ID field
+                if( Column == "ID" ){
+                    ShowContainsIdField = true;
+                }
+                // String
+                ThisArray.push( ([ "R", Column, Label ]).join( spr.vm ) );
+                // Query
+                ThisQueryArray.push( Column );
             }
-            // String
-            ThisArray.push( ([ "R", Column, Label ]).join( spr.vm ) );
-            // Query
-            ThisQueryArray.push( Column );
         });
         // Add ID if not already there
         if( ShowContainsIdField == false ){
@@ -877,12 +930,12 @@ builderSave: function(){
             QueryArray.push( QueryShow );
         }
 
-        spr.logMute( 'SHOW' );
-        console.table( ThisArray );
-        console.log( "String for the database" );
-        console.log( StringShow );
-        console.log( "String for the query" );
-        console.log( QueryShow );
+        spr.logTrace( 'SHOW' );
+        spr.logTable( ThisArray );
+        spr.logTrace( "String for the database" );
+        spr.logTrace( StringShow );
+        spr.logTrace( "String for the query" );
+        spr.logTrace( QueryShow );
 
 
         // Build the Query
@@ -892,16 +945,39 @@ builderSave: function(){
         // Save to SharePoint Report List
             // Create or Retrieve the record
             if( spReportifyData.builder.mode == "edit" ){
-                this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).getItemById( spReportifyData.builder.report.id );
+                switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
+                    case "title":
+                        this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListRef).getItemById( spReportifyData.builder.report.id );
+                        break;
+                    case "guid":
+                        this.ReportRecord = spReportifyData.sp.web.get_lists().getById(spReportifyData.config.reportListRef).getItemById( spReportifyData.builder.report.id );
+                        break;
+                }
+                
             }else{
                 this.NewReportRecord = new SP.ListItemCreationInformation();
-                this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListName).addItem( NewReportRecord );
+                switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
+                    case "title":
+                        this.ReportRecord = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListRef).addItem( this.NewReportRecord );
+                        break;
+                    case "guid":
+                        this.ReportRecord = spReportifyData.sp.web.get_lists().getById(spReportifyData.config.reportListRef).addItem( this.NewReportRecord );
+                        break;
+                }
+                
             }
 
             // Set Values
             this.ReportRecord.set_item('Title', spReportifyData.builder.report.title );
             this.ReportRecord.set_item('ListId', spReportifyData.builder.list.id );
             this.ReportRecord.set_item('Description', document.getElementById("BuilderFormOptionDescription").value);
+
+            var OptionBatch = document.getElementById("BuilderFormOptionBatchSize").value;
+            var OptionBatchValue = 0;
+            if( OptionBatch.trim() + "" != "" ){
+                OptionBatchValue = parseInt( OptionBatch );
+            }
+            this.ReportRecord.set_item('BatchSize', OptionBatchValue );
 
             this.ReportRecord.set_item('SelectEntries', StringSelect );
             this.ReportRecord.set_item('SortEntries', StringSort );
@@ -914,24 +990,63 @@ builderSave: function(){
             // Send Query
             spReportifyData.sp.ctx.executeQueryAsync(
                 Function.createDelegate( this, this.builderSave_Success ),
-                Function.createDelegate( this, this.builderSave_Failed )
+                Function.createDelegate( this, this.logSysError )
             );
 },
 
 builderSave_Success: function(){
     alert( 'Report Saved !');
 },
-builderSave_Failed: function( sender, args ){
-    spr.logError( args.get_message() );
+
+builderCloseReport: function(){
+    // Reset spReportifyData
+        spReportifyData.builder = {
+            lists: spReportifyData.builder.lists
+        }
+    // Remove Lines in Tables
+        document.getElementById("BuilderFormSelectTableBody").innerHTML = "";
+        document.getElementById("BuilderFormSortTableBody").innerHTML = "";
+        document.getElementById("BuilderFormShowTableBody").innerHTML = "";
+        document.getElementById("BuilderDictionaryTableBody").innerHTML = "";
+
+    // Remove Report References
+        document.getElementById("BuilderReportIdentityDatasource").innerHTML = "";
+        document.getElementById("BuilderReportIdentityReportName").innerHTML = "";
+
+    // Remove Report Options
+        document.getElementById("BuilderFormOptionDescription").value = "";
+        document.getElementById("BuilderFormOptionBatchSize").value = "";
+
+    // Reset Builder Form Visibility
+        spr.show("BuilderIdentifyReport");
+        spr.show("BuilderFormSectionDatasource");
+        spr.hide("BuilderFormSectionAction");
+        spr.hide("BuilderFormSectionReportPicker");
+        spr.hide("BuilderFormSectionReportNaming");
+        spr.hide("BuilderFormSectionLoadCreateReport");
+        spr.hide("BuilderForm");
+        spr.hide("BuilderReportIdentity");
+
+    // Reset Initial Form
+        document.getElementById("BuilderFormControlDatasource").value = null;
+
 },
 
 runnerGetReport: function( Identifier ){
     spr.waitingShow( "Requesting the report definition..." );
-    spReportifyData.runner["api"] = spReportifyData.sp.web.get_lists().getByTitle( spReportifyData.config.reportListName ).getItemById( spReportifyData.params.rpt );
+    spReportifyData.runner["data"] = [];
+    switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
+        case "title":
+            spReportifyData.runner["api"] = spReportifyData.sp.web.get_lists().getByTitle( spReportifyData.config.reportListRef ).getItemById( spReportifyData.params.rpt );
+            break;
+        case "guid":
+            spReportifyData.runner["api"] = spReportifyData.sp.web.get_lists().getById( spReportifyData.config.reportListRef ).getItemById( spReportifyData.params.rpt );
+            break;
+    }
     spReportifyData.sp.ctx.load( spReportifyData.runner.api );
     spReportifyData.sp.ctx.executeQueryAsync( 
         Function.createDelegate( this, spr.runnerParseReport ),
-        Function.createDelegate( this, spr.builderSave_Failed )
+        Function.createDelegate( this, spr.logSysError )
     );
 },
 
@@ -942,43 +1057,26 @@ runnerParseReport: function(){
         listId: spReportifyData.runner.api.get_item("ListId"),
         description: spReportifyData.runner.api.get_item("Description"),
         columns: spReportifyData.runner.api.get_item("ShowEntries"),
-        query: spReportifyData.runner.api.get_item("Query")
+        query: spReportifyData.runner.api.get_item("Query"),
+        batchSize: spReportifyData.runner.api.get_item("BatchSize")
     };
-    spr.logTitle("Report");
-    console.table( spReportifyData.runner.report );
+    spr.logTrace("Report Definition");
+    spr.logTable( spReportifyData.runner.report );
 
-    spr.runnerGetData();
+    spr.runnerGetFirstBatch();
 },
 
-runnerGetData: function(){
-    spr.waitingShow( "Reading data..." );
-
-
-    var AjaxOptions = {
-        url: `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}` ,
-        method: "GET",
-        async: false,
-        headers: {
-            "accept":"application/json;odata=verbose",
-            "content-type":"application/json;odata=verbose"
-        }
-    }
-
-    // Send Request to Server
-    $.ajax( AjaxOptions )
-    .done( function ( data ){
-        spReportifyData.runner["data"] = data.d.results;
-        spr.runnerDrawReport();
-        
-    })
-    .fail( function( data){
-        if( typeof data.responseJSON.error.message.value !== undefined ){
-            spr.logError( data.responseJSON.error.message.value );
-        }
-    })
-
+runnerGetFirstBatch: function(){
+    spr.stackAdd( spr.runnerDrawReport );
+    spr.stackAdd( spr.runnerGetData );
+    spr.stackAdd( spr.runnerInsertData );
+    spr.stackRun();
 },
-
+runnerGetNextBatch: function(){
+    spr.stackAdd( spr.runnerGetData );
+    spr.stackAdd( spr.runnerInsertData);
+    spr.stackRun();
+},
 
 runnerDrawReport: function(){
 
@@ -996,6 +1094,7 @@ runnerDrawReport: function(){
         })
     });
 
+
     // Table Headers
     var elHeaders = document.createElement( "tr" );
     spReportifyData.runner.columns.forEach( function( thisColumn ){
@@ -1004,12 +1103,58 @@ runnerDrawReport: function(){
         elHeaders.appendChild( elHeader );
     });
     document.getElementById("RunnerReportTableHead").appendChild( elHeaders );
+    spr.waitingHide();
 
+    spr.stackRun();
+},
+
+runnerGetData: function(){
+    spr.waitingShow( "Downloading data..." );
+    spReportifyData.runner["dataBatch"] = [];
+    var AjaxOptions = {
+        url: ( spReportifyData.runner.nextPage.hasNextPage ? spReportifyData.runner.nextPage.next : `${spReportifyData.config.url}/_api/web/Lists(guid'${spReportifyData.runner.report.listId}')/items?${spReportifyData.runner.report.query}&$top=${spReportifyData.runner.report.batchSize}` ) ,
+        method: "GET",
+        async: false,
+        headers: {
+            "accept":"application/json;odata=verbose",
+            "content-type":"application/json;odata=verbose"
+        }
+    }
+    // I used the "NextPage" URL so I remove it and set it in the Previous Page.
+        spReportifyData.runner.nextPage.previous = spReportifyData.runner.nextPage.next;
+        spReportifyData.runner.nextPage.next = "";
+
+    // Send Request to Server
+    $.ajax( AjaxOptions )
+    .done( function ( data ){
+        // If SharePoint returns a Next Page, that is not the most recent used.
+        if( (data.d).hasOwnProperty('__next') && (data.d.__next != spReportifyData.runner.nextPage.previous ) ){
+            spReportifyData.runner.nextPage.next = data.d.__next;
+            spReportifyData.runner.nextPage.hasNextPage = true;
+        }else{
+            spReportifyData.runner.nextPage.hasNextPage = false;
+        }
+        spReportifyData.runner.data = [
+            ...spReportifyData.runner.data,
+            ...data.d.results
+        ];
+        spReportifyData.runner["dataBatch"] = data.d.results;
+    
+        spr.stackRun();
+    })
+    .fail( function( jqXHR, textStatus, error ){
+        spr.logError("Error Getting Report.");
+        spr.logError( textStatus );
+        spr.logError( error );
+    })
+},
+
+
+runnerInsertData: function(){
     // Details
-    spReportifyData.runner.data.forEach( function( thisRecord ){
+    spReportifyData.runner.dataBatch.forEach( function( thisRecord ){
         var elRow = document.createElement( "tr" );
         elRow.id = "data_" + thisRecord["ID"];
-
             spReportifyData.runner.columns.forEach( function( thisColumn ){
                 var elCell = document.createElement( "td" );
                 elCell.id = thisColumn.name + "_" + thisRecord["ID"];
@@ -1018,8 +1163,13 @@ runnerDrawReport: function(){
             });
         document.getElementById("RunnerReportTableBody").appendChild( elRow );
     });
-
-    spr.waitingHide();
+    if( spReportifyData.runner.nextPage.hasNextPage ){
+        spr.show("RunnerFetchNextPageButton");
+    }else{
+        spr.hide("RunnerFetchNextPageButton");
+        spr.show("RunnerFetchNextPageFinished");
+    }
+    spr.stackRun();
 },
 
 
@@ -1060,8 +1210,8 @@ runnerDrawReport: function(){
         for( const entry of entries ){
             spReportifyData.params[entry[0].toLowerCase()] = entry[1];
         }
-        spr.logTitle("Parameters from URL");
-        console.table( spReportifyData.params );
+        spr.logTrace("Parameters from URL");
+        spr.logTable( spReportifyData.params );
         spr.stackRun();
     },
 
@@ -1111,7 +1261,9 @@ runnerDrawReport: function(){
  * Display a title in the Console.
  */
     logTitle: function( Title ){
-        console.log(`%c${Title}`, "color: #233E82;font-family:Tahoma;font-weight:bold;font-size:18px;");
+        if( spReportifyData.config.logLevel > 0){
+            console.log(`%c${Title}`, "color: #233E82;font-family:Tahoma;font-weight:bold;font-size:18px;");
+        }
     },
 /**
  * logMute
@@ -1122,11 +1274,65 @@ runnerDrawReport: function(){
 },
 /**
  * logError
- * Display an entry in the Console, bold error.
+ * If Log Level is at least "error".
+ * Display an Error Console Entry.
  */
 logError: function( Message ){
-    console.log(`%c  ${Message}  `, "background: #E81123;color:#fff;font-family:Arial;font-weight:bold;");
+    if( spReportifyData.config.logLevel >= 4 ){
+        console.log(`%c  ${Message}  `, "background: #d62828;color:#fff;font-family:Arial;font-weight:bold;");
+    }
 },
+/**
+ * logSysError
+ * If Log Level is at least "error".
+ * Display System-Error - To use for failures.
+ */
+logSysError: function( sender, args ){
+    if( spReportifyData.config.logLevel >= 1 ){
+        console.log(`%c ${args.get_message()}`, "background: #ff5d8f, color: black; font-family: Arial; font-weight: bold;");
+    }
+},
+/**
+ * logWarn
+ * If Log Level is at least "warn".
+ * Display a Warning Console Entry.
+ */
+logWarn: function( Message ){
+    if( spReportifyData.config.logLevel >= 3 ){
+        console.log(`%c  ${Message}  `, "background: #fca311;color:black;font-family:Arial;");
+    }
+},
+/**
+ * logInfo
+ * If Log Level is at least "info".
+ * Display an Information Console Entry.
+ */
+logInfo: function( Message ){
+    if( spReportifyData.config.logLevel >= 2 ){
+        console.log(`%c  ${Message}  `, "background: #cee5f2;color:black;font-family:Arial;");
+    }
+},
+/**
+ * logTrace
+ * If Log Level is at least "trace".
+ * Display an Information Console Entry.
+ */
+logTrace: function( Message ){
+    if( spReportifyData.config.logLevel >= 1 ){
+        console.log( Message );
+    }
+},
+/**
+ * logTable
+ * Same level as Trace.
+ * Display a DataTable in the Console.
+ */
+logTable: function( Data ){
+    if( spReportifyData.config.logLevel >= 1 ){
+        console.table( Data );
+    }
+},
+
 /**
  * show
  * Show an Element.

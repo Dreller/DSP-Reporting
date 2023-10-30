@@ -116,6 +116,7 @@
     <!-- Toolbar -->
         <section id="BuilderToolbar" class="toolbar">
             <ul class="toolbar">
+            <li onclick="spReportify.builderCloseReport();">Close</li>
             <li data-modal="BuilderDataDictionary">Dictionary</li>
             <li onclick="spReportify.builderSave();">Save</li>
             <li onclick="abc">Save & Run</li>
@@ -207,6 +208,18 @@
                             <textarea id="BuilderFormOptionDescription">
 
                             </textarea>
+                        </td>
+                    </tr>
+                    <!-- Report Max Items to returns per page -->
+                    <tr>
+                        <td>
+                            Items by page
+                        </td>
+                        <td>
+                            Number of items to display per page.
+                        </td>
+                        <td>
+                            <input type="number" id="BuilderFormOptionBatchSize" />
                         </td>
                     </tr>
                     <!-- .. -->
