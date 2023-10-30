@@ -88,7 +88,16 @@ init: function(){
             page: ( (window.location.pathname).split("/").pop() ).toLowerCase(),
         };
         // Runtime Mode
-            spReportifyData.environ["mode"] = ( spReportifyData.environ.page == spReportifyData.config.pageBuilder ? "builder" : "runner" );
+            switch( spReportifyData.environ.page ){
+                case spReportifyData.config.pageBuilder:
+                    spReportifyData.environ["mode"] = "builder";
+                    break;
+                case spReportifyData.config.pageRunner:
+                    spReportifyData.environ["mode"] = "runner";
+                    break;
+                default:
+                    spReportifyData.environ["mode"] = "maintenance";
+            }
 
     // Output to Console - Initialization
         spr.logTitle( "Initializing spReportify..." );
