@@ -12,7 +12,8 @@
         site: {},           // Info about the SharePoint Site.
         builder: {},        // Work Data for the Report Builder.
         environ: {},        // Environment (Browser, Language, etc.)
-        runner: {}
+        runner: {},
+        home: {}
     }
 // Variable to refer to SP API
     let _api;
@@ -125,6 +126,12 @@ start: function(){
         this.stackAdd( this.getUser );
         this.stackAdd( this.getSite );
 
+        // Commands for Maintenance
+            if( spReportifyData.environ.mode == "maintenance" ){
+                spReportifyData.sp.caml = new SP.CamlQuery();
+                this.stackAdd( this.getLists );
+            }
+
         // Commands for Report Builder
             if( spReportifyData.environ.mode == "builder" ){
                 this.waitingShow( "Starting Report Builder..." );
@@ -194,7 +201,7 @@ getSite: function(){
  * Retrieve all allowed lists & libraries in the site.
  */
 getLists: function(){
-    spReportifyData.builder["lists"] = [];
+    var localList = [];
     _api = spReportifyData.sp.web.get_lists();
     spReportifyData.sp.ctx.load( _api );
     spReportifyData.sp.ctx.executeQueryAsync(
@@ -233,7 +240,7 @@ getLists: function(){
 
                 // Add the list to the spReportifyData.builder.lists Array
                 if( KeepThisList ){
-                    spReportifyData.builder.lists.push(
+                    localList.push(
                         {
                             id: thisListId,
                             name: thisListName,
@@ -243,8 +250,15 @@ getLists: function(){
                     )
                 }
             }
+
+            if( spReportifyData.environ.mode == 'builder' ){
+                spReportifyData.builder["lists"] = localList;
+            }else{
+                spReportifyData.home["lists"] = localList;
+            }
+
             spr.logInfo( "Available Lists" );
-            spr.logTable( spReportifyData.builder.lists );
+            spr.logTable( localList );
             spr.stackRun();
         },
         // Failure
@@ -1179,6 +1193,80 @@ runnerInsertData: function(){
         spr.show("RunnerFetchNextPageFinished");
     }
     spr.stackRun();
+},
+
+
+homeGetReports: function(){
+    spr.waitingShow("Fetching Available Reports...");
+    spReportifyData.sp.caml.set_viewXml('<View><RowLimit>5000</RowLimit></View>');
+    // Get Reports using Reports List Reference
+    switch( (spReportifyData.config.reportListRefType).toLowerCase() ){
+        case "title":
+            _api = spReportifyData.sp.web.get_lists().getByTitle(spReportifyData.config.reportListRef).getItems( spReportifyData.sp.caml );
+            break;
+        case "guid":
+            _api = spReportifyData.sp.web.get_lists().getById(spReportifyData.config.reportListRef).getItems( spReportifyData.sp.caml );
+            break;
+    }
+    spReportifyData.sp.ctx.load( _api );
+    spReportifyData.sp.ctx.executeQueryAsync(
+        // Success
+        function(){
+            spReportifyData.home["reports"] = [];
+            var enumReports = _api.getEnumerator();
+            while( enumReports.moveNext() ){
+                var thisReport = enumReports.get_current();
+                var thisReportId = thisReport.get_id();
+                var thisReportTitle = thisReport.get_item("Title");
+                var thisReportDescription = thisReport.get_item("Description");
+                var thisReportList = spReportifyData.home.lists.find( x => x.id == thisReport.get_item("ListId") );
+
+                spReportifyData.home.reports.push({
+                    id: thisReportId,
+                    title: thisReportTitle,
+                    description: ( thisReportDescription == null ? '' : thisReportDescription ),
+                    listId: thisReportList.id,
+                    listName: thisReportList.name
+                });
+            };
+
+            // Sort the list of reports
+                spReportifyData.home.reports.sort((a, b) => {
+                    const nameA = a.title.toLowerCase();
+                    const nameB = b.title.toLowerCase();
+                    if( nameA < nameB ){ return -1; }
+                    if (nameA > nameB ){ return 1;  }
+                    return 0;
+                });
+
+            spr.logTrace( "All Available Reports" );
+            spr.logTable( spReportifyData.home.reports );
+            // Insert Reports in the Homepage
+            document.getElementById("HomeReportsBody").innerHTML="";
+            spr.show("HomeReports");
+            spr.hide("HomeCards");
+            (spReportifyData.home.reports).forEach( function( thisReport){
+                var elRow = document.createElement("tr");
+                elRow.id = thisReport.id;
+                elRow.innerHTML = `<td>${thisReport.listName}</td><td>${thisReport.title}</td><td>${thisReport.description}</td><td>
+                <span class="button" onclick="location.href=spReportifyData.config.pageBuilder + '?rpt=${thisReport.id}'">Edit</span>
+                &nbsp;
+                <span class="button" onclick="location.href=spReportifyData.config.pageRunner + '?rpt=${thisReport.id}'">Execute</span>
+                `;
+                document.getElementById("HomeReportsBody").appendChild( elRow );
+            });
+            spr.waitingHide();
+        },
+        // Failure
+        Function.createDelegate( this, this.logSysError )
+    );
+        
+},
+
+homeBackHome: function(){
+    spr.hide("HomeReports");
+
+    spr.show("HomeCards");
 },
 
 
