@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>spReportify ● Report</title>
+    <title>spReportify &#10149; Report</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="bin/jquery-3.7.0.js"></script>
